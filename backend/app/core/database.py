@@ -3,10 +3,13 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
 
+from sqlalchemy.pool import NullPool
+
 # Crear motor de base de datos asíncrono para PostgreSQL
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=True,  # Mostrar logs de consultas SQL en consola en desarrollo
+    poolclass=NullPool,
 )
 
 # Creador de sesiones asíncronas

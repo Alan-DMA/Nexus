@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
 # Cargar variables de entorno desde el archivo .env
-load_dotenv()
+load_dotenv(override=True)
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Nexus"

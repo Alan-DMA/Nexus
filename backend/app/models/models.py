@@ -37,6 +37,7 @@ class Tenant(Base):
     payment_instructions = Column(Text)
 
     plan_id = Column(UUID(as_uuid=True), ForeignKey('plans.id', ondelete='SET NULL'))
+    current_exchange_rate = Column(Numeric(12, 4), nullable=False, default=36.50, server_default=text("36.50"))
     subscription_status = Column(String(50), nullable=False, default='ACTIVE', server_default=text("'ACTIVE'"))
     created_at = Column(DateTime, default=datetime.utcnow, server_default=text("now()"))
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, server_default=text("now()"))
