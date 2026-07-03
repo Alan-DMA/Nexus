@@ -1,0 +1,33 @@
+# Python/Virtual Environment
+backend/.venv/
+.venv/
+__pycache__/
+*.pyc
+backend/.env
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# Flutter related
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/build/
+frontend/pubspec.lock
+frontend/migrate_working_dir/
+frontend/android/app/debug
+frontend/android/app/profile
+frontend/android/app/release
+
+# OS specific
+.DS_Store
+Thumbs.db

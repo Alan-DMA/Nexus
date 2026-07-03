@@ -1,0 +1,344 @@
+// Database Schema for NEXUS v3.0
+// Gestión Comercial Modular - Minorista Venezuela
+
+Table plans {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(100) [not null] // Emprendedor, Comercio, Corporativo
+  price numeric(10, 2) [not null]
+  max_users integer [not null]
+  max_warehouses integer [not null]
+  created_at timestamp [default: `now()`]
+}
+
+Table tenants {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(255) [not null]
+  preferred_payment_method varchar(50)
+  payment_instructions text
+  plan_id uuid [ref: > plans.id]
+  subscription_status varchar(50) [not null, default: 'ACTIVE'] // ACTIVE, SOFT_LOCK, HARD_LOCK
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table roles {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  name varchar(100) [not null] // TENANT_OWNER, MANAGER, CASHIER, SALESPERSON
+  description text
+  created_at timestamp [default: `now()`]
+
+  Indexes {
+    (tenant_id, name) [unique]
+  }
+}
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  username varchar(100) [not null]
+  email varchar(255) [not null]
+  password_hash varchar(255) [not null]
+  role_id uuid [ref: > roles.id]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Indexes {
+    (tenant_id, email) [unique]
+    (tenant_id, username) [unique]
+  }
+}
+
+Table permissions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(100) [unique, not null] // e.g. 'inventario.crear', 'ventas.crear'
+  description text
+}
+
+Table role_permissions {
+  role_id uuid [ref: > roles.id, not null]
+  permission_id uuid [ref: > permissions.id, not null]
+  
+  Indexes {
+    (role_id, permission_id) [pk]
+  }
+}
+
+Table categories {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  name varchar(100) [not null]
+  description text
+  created_at timestamp [default: `now()`]
+
+  Indexes {
+    (tenant_id, name) [unique]
+  }
+}
+
+Table products {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  category_id uuid [ref: > categories.id]
+  barcode varchar(100)
+  name varchar(255) [not null]
+  description text
+  cost_usd numeric(12, 4) [not null, default: 0]
+  price_usd numeric(12, 4) [not null, default: 0]
+  price_ves_manual numeric(12, 4)
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Indexes {
+    (tenant_id, barcode) [unique]
+    (tenant_id, name)
+  }
+}
+
+Table warehouses {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  name varchar(100) [not null]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+
+  Indexes {
+    (tenant_id, name) [unique]
+  }
+}
+
+Table inventory {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  product_id uuid [ref: > products.id, not null]
+  warehouse_id uuid [ref: > warehouses.id, not null]
+  stock_available numeric(12, 4) [not null, default: 0]
+  stock_reserved numeric(12, 4) [not null, default: 0]
+  updated_at timestamp [default: `now()`]
+
+  Indexes {
+    (tenant_id, product_id, warehouse_id) [unique]
+  }
+}
+
+Table inventory_movements {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  product_id uuid [ref: > products.id, not null]
+  warehouse_id uuid [ref: > warehouses.id, not null]
+  quantity numeric(12, 4) [not null]
+  type varchar(50) [not null] // ENTRADA, SALIDA, TRASLADO, AJUSTE, RESERVA, LIBERACION
+  reference_document varchar(100) // sale_id, purchase_id, transfer_id, etc.
+  notes text
+  created_at timestamp [default: `now()`]
+}
+
+Table combos {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  name varchar(255) [not null]
+  price_usd numeric(12, 4) [not null]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+}
+
+Table combo_items {
+  combo_id uuid [ref: > combos.id, not null]
+  product_id uuid [ref: > products.id, not null]
+  quantity numeric(12, 4) [not null]
+
+  Indexes {
+    (combo_id, product_id) [pk]
+  }
+}
+
+Table sales {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  user_id uuid [ref: > users.id, not null]
+  exchange_rate_applied numeric(12, 4) [not null] // Tasa de cambio congelada
+  status varchar(50) [not null, default: 'DRAFT'] // DRAFT, PENDING_PAYMENT, PAID, COMPLETED, CANCELLED, REFUNDED
+  total_usd numeric(12, 4) [not null, default: 0]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table sale_items {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  sale_id uuid [ref: > sales.id, not null]
+  product_id uuid [ref: > products.id]
+  quantity numeric(12, 4) [not null]
+  unit_cost_usd numeric(12, 4) [not null] // Costo de compra congelado
+  unit_price_usd numeric(12, 4) [not null] // Precio de venta cobrado
+  created_at timestamp [default: `now()`]
+}
+
+Table sale_payments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  sale_id uuid [ref: > sales.id, not null]
+  payment_method varchar(50) [not null] // EFECTIVO_USD, EFECTIVO_VES, PAGO_MOVIL, ZELLE, TARJETA
+  amount_usd numeric(12, 4) [not null] // Monto en USD equivalente
+  amount_ves numeric(12, 4) [not null] // Monto en VES real pagado
+  reference_number varchar(100) // Referencia de Pago Móvil, Zelle, etc.
+  created_at timestamp [default: `now()`]
+}
+
+Table suppliers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  name varchar(255) [not null]
+  contact_name varchar(255)
+  phone varchar(50)
+  email varchar(255)
+  rif varchar(50) // RIF del proveedor en Venezuela
+  created_at timestamp [default: `now()`]
+
+  Indexes {
+    (tenant_id, rif) [unique]
+  }
+}
+
+Table purchase_orders {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  supplier_id uuid [ref: > suppliers.id, not null]
+  status varchar(50) [not null, default: 'PENDIENTE'] // PENDIENTE, RECIBIDO, CANCELADO
+  invoice_file_url varchar(255) // URL de la factura adjunta en Backblaze B2
+  total_usd numeric(12, 4) [not null, default: 0]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table purchase_items {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  purchase_order_id uuid [ref: > purchase_orders.id, not null]
+  product_id uuid [ref: > products.id, not null]
+  quantity numeric(12, 4) [not null]
+  unit_cost_usd numeric(12, 4) [not null]
+  created_at timestamp [default: `now()`]
+}
+
+Table accounts_payable {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  supplier_id uuid [ref: > suppliers.id, not null]
+  purchase_order_id uuid [ref: > purchase_orders.id]
+  amount_usd numeric(12, 4) [not null]
+  amount_ves numeric(12, 4) [not null]
+  due_date timestamp [not null]
+  status varchar(50) [not null, default: 'PENDIENTE'] // PENDIENTE, PAGADO, PARCIAL
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table cash_registers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  warehouse_id uuid [ref: > warehouses.id, not null]
+  name varchar(100) [not null]
+  is_active boolean [default: true]
+
+  Indexes {
+    (tenant_id, warehouse_id, name) [unique]
+  }
+}
+
+Table cash_sessions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  cash_register_id uuid [ref: > cash_registers.id, not null]
+  user_id uuid [ref: > users.id, not null]
+  opened_at timestamp [not null, default: `now()`]
+  closed_at timestamp
+  initial_balance_usd numeric(12, 4) [not null]
+  initial_balance_ves numeric(12, 4) [not null]
+  expected_balance_usd numeric(12, 4)
+  expected_balance_ves numeric(12, 4)
+  real_balance_usd numeric(12, 4)
+  real_balance_ves numeric(12, 4)
+  status varchar(50) [not null, default: 'ABIERTA'] // ABIERTA, CERRADA
+}
+
+Table cash_movements {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  cash_session_id uuid [ref: > cash_sessions.id, not null]
+  amount_usd numeric(12, 4) [not null]
+  amount_ves numeric(12, 4) [not null]
+  type varchar(50) [not null] // VENTA, RETIRO, DEPOSITO, AJUSTE
+  reference_id varchar(100) // sale_id u otro identificador
+  notes text
+  created_at timestamp [default: `now()`]
+}
+
+Table subscription_invoices {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  plan_id uuid [ref: > plans.id, not null]
+  amount numeric(10, 2) [not null]
+  due_date timestamp [not null]
+  status varchar(50) [not null, default: 'PENDIENTE'] // PENDIENTE, PAGADA, VENCIDA
+  created_at timestamp [default: `now()`]
+}
+
+Table binance_payments_processed {
+  binance_transaction_id varchar(255) [pk]
+  tenant_id uuid [ref: > tenants.id, not null]
+  subscription_invoice_id uuid [ref: > subscription_invoices.id, not null]
+  amount numeric(10, 2) [not null]
+  processed_at timestamp [default: `now()`]
+}
+
+Table subscription_payment_validations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  subscription_invoice_id uuid [ref: > subscription_invoices.id, not null]
+  payment_method varchar(50) [not null] // PAGO_MOVIL, ZINLI, PAYPAL, EFECTIVO
+  reference_number varchar(100)
+  receipt_file_url varchar(255)
+  status varchar(50) [not null, default: 'PENDIENTE'] // PENDIENTE, APROBADO, RECHAZADO
+  validated_by uuid [ref: > users.id] // Alan o Eduardo
+  validation_notes text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table catalog_pages {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null, unique]
+  slug varchar(100) [not null, unique] // e.g. 'bodega-juan'
+  title varchar(255) [not null]
+  description text
+  whatsapp_number varchar(50) [not null]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table catalog_orders {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  customer_name varchar(255) [not null]
+  customer_phone varchar(50) [not null]
+  total_usd numeric(12, 4) [not null]
+  status varchar(50) [not null, default: 'ENVIADO'] // ENVIADO, CONFIRMADO, CANCELADO
+  created_at timestamp [default: `now()`]
+}
+
+Table audit_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id, not null]
+  user_id uuid [ref: > users.id, not null]
+  action varchar(100) [not null] // e.g. 'PRODUCT_PRICE_CHANGED'
+  entity_type varchar(100) [not null] // e.g. 'products'
+  entity_id uuid [not null]
+  old_values jsonb
+  new_values jsonb
+  ip_address varchar(45)
+  created_at timestamp [default: `now()`]
+}
