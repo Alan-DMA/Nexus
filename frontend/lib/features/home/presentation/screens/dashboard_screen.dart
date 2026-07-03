@@ -14,6 +14,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isUsd = ref.watch(currencyIsUsdProvider);
     const double exchangeRate = 36.50; // Tasa del día simulación
+    final theme = Theme.of(context);
 
     // Utilidades para conversión de moneda
     String formatCurrency(double amountUsd) {
@@ -26,30 +27,30 @@ class DashboardScreen extends ConsumerWidget {
     }
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGlow,
+                color: theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.blur_on, color: AppTheme.primary),
+              child: Icon(Icons.storefront, color: theme.colorScheme.onPrimaryContainer),
             ),
             const SizedBox(width: 12),
             const Text('NEXUS'),
           ],
         ),
         actions: [
-          // Toggle Bimoneda (SR-03 Alternador de Vista Bimoneda)
+          // Toggle Bimoneda
           Container(
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             decoration: BoxDecoration(
-              color: AppTheme.darkSurface,
+              color: theme.colorScheme.surfaceVariant,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF1E293B)),
             ),
             child: Row(
               children: [
@@ -58,10 +59,10 @@ class DashboardScreen extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isUsd ? AppTheme.primary : Colors.transparent,
+                      color: isUsd ? theme.colorScheme.primary : Colors.transparent,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Text('USD', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: Text('USD', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isUsd ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface)),
                   ),
                 ),
                 GestureDetector(
@@ -69,10 +70,10 @@ class DashboardScreen extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: !isUsd ? AppTheme.primary : Colors.transparent,
+                      color: !isUsd ? theme.colorScheme.primary : Colors.transparent,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Text('VES', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: Text('VES', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: !isUsd ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface)),
                   ),
                 ),
               ],
@@ -87,32 +88,34 @@ class DashboardScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Saludo de Bienvenida
-            const Text('¡Hola, Alan!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-            const Text('Bodega El Sol (Tenant #001) • Plan Comercio', style: TextStyle(color: Color(0xFF94A3B8))),
+            Text('¡Hola, Alan!', style: theme.textTheme.headlineSmall),
+            Text('Bodega El Sol (Tenant #001) • Plan Comercio', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 24),
 
-            // Tarjetas Financieras (Glassmorphic look)
+            // Tarjetas Financieras
             LayoutBuilder(
               builder: (context, constraints) {
                 return Row(
                   children: [
                     Expanded(
                       child: _buildFinancialCard(
+                        context: context,
                         title: 'Ventas de Hoy',
                         value: formatCurrency(350.50),
                         subtext: isUsd ? 'Tasa: 1 USD = Bs. $exchangeRate' : 'Tasa oficial congelada',
                         icon: Icons.trending_up,
-                        accentColor: AppTheme.success,
+                        accentColor: theme.colorScheme.secondary,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildFinancialCard(
+                        context: context,
                         title: 'Comisiones Vendedor',
                         value: formatCurrency(35.05),
                         subtext: '10% de ganancia neta',
                         icon: Icons.percent,
-                        accentColor: AppTheme.secondary,
+                        accentColor: theme.colorScheme.tertiary,
                       ),
                     ),
                   ],
@@ -121,8 +124,8 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
 
-            // Sección de Acciones Rápidas (SR-02 Action Cards)
-            const Text('Acciones Rápidas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            // Sección de Acciones Rápidas
+            Text('Acciones Rápidas', style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
             GridView.count(
               crossAxisCount: 2,
@@ -133,10 +136,11 @@ class DashboardScreen extends ConsumerWidget {
               childAspectRatio: 1.4,
               children: [
                 _buildActionCard(
+                  context: context,
                   title: 'Nueva Venta',
                   description: 'Checkout por cámara',
                   icon: Icons.qr_code_scanner,
-                  color: AppTheme.primary,
+                  color: theme.colorScheme.primary,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(builder: (context) => const CheckoutScreen()),
@@ -144,51 +148,50 @@ class DashboardScreen extends ConsumerWidget {
                   },
                 ),
                 _buildActionCard(
+                  context: context,
                   title: 'Inventario',
                   description: 'Ver y ajustar stock',
                   icon: Icons.inventory_2,
-                  color: AppTheme.secondary,
-                  onTap: () {
-                    // Acción inventario
-                  },
+                  color: theme.colorScheme.secondary,
+                  onTap: () {},
                 ),
                 _buildActionCard(
+                  context: context,
                   title: 'Registro al Vuelo',
                   description: 'Producto rápido',
                   icon: Icons.add_circle_outline,
-                  color: AppTheme.accent,
-                  onTap: () {
-                    // Creación rápida sin IA
-                  },
+                  color: theme.colorScheme.tertiary,
+                  onTap: () {},
                 ),
                 _buildActionCard(
+                  context: context,
                   title: 'Cierre de Caja',
                   description: 'Arqueo multimoneda',
                   icon: Icons.account_balance_wallet,
-                  color: AppTheme.success,
-                  onTap: () {
-                    // Arqueo
-                  },
+                  color: theme.colorScheme.secondary,
+                  onTap: () {},
                 ),
               ],
             ),
             const SizedBox(height: 24),
 
-            // Alertas y Notificaciones en tiempo real
-            const Text('Alertas Críticas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            // Alertas y Notificaciones
+            Text('Alertas Críticas', style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
             _buildAlertCard(
+              context: context,
               title: 'Stock Crítico de Harina PAN',
               description: 'Solo quedan 2 unidades en Almacén Principal. Umbral mínimo: 5.',
               icon: Icons.warning_amber_rounded,
-              color: AppTheme.warning,
+              color: theme.colorScheme.error,
             ),
             const SizedBox(height: 10),
             _buildAlertCard(
+              context: context,
               title: 'Pago Móvil Pendiente por Validar',
               description: 'El administrador tiene 1 pago de suscripción pendiente de aprobación manual.',
               icon: Icons.payment,
-              color: AppTheme.primary,
+              color: theme.colorScheme.primary,
             ),
           ],
         ),
@@ -197,87 +200,87 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildFinancialCard({
+    required BuildContext context,
     required String title,
     required String value,
     required String subtext,
     required IconData icon,
     required Color accentColor,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.darkSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
-              Icon(icon, size: 16, color: accentColor),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-          const SizedBox(height: 4),
-          Text(subtext, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionCard({
-    required String title,
-    required String description,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.darkSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF1E293B)),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
-                const SizedBox(height: 2),
-                Text(description, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                Text(title, style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Icon(icon, size: 16, color: accentColor),
               ],
             ),
+            const SizedBox(height: 12),
+            Text(value, style: AppTheme.numericLg(context)),
+            const SizedBox(height: 4),
+            Text(subtext, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildActionCard({
+    required BuildContext context,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 2),
+                  Text(description, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildAlertCard({
+    required BuildContext context,
     required String title,
     required String description,
     required IconData icon,
     required Color color,
   }) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -294,9 +297,9 @@ class DashboardScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+                Text(title, style: theme.textTheme.titleSmall?.copyWith(color: color)),
                 const SizedBox(height: 4),
-                Text(description, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                Text(description, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ],
             ),
           ),

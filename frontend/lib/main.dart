@@ -35,7 +35,7 @@ class NexusApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Nexus',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme, // Cargar tema oscuro premium del diseño HSL
+      theme: AppTheme.lightTheme, // Cargar tema claro del diseño HSL
       home: isAuthed ? const DashboardScreen() : const LoginScreen(),
     );
   }

@@ -107,7 +107,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${product['name']} agregado al carrito.'),
-          backgroundColor: AppTheme.success,
+          backgroundColor: Colors.green,
           duration: const Duration(seconds: 1),
         ),
       );
@@ -245,10 +245,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            backgroundColor: AppTheme.darkSurface,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             title: const Row(
               children: [
-                Icon(Icons.check_circle_outline, color: AppTheme.success),
+                Icon(Icons.check_circle_outline, color: Colors.green),
                 SizedBox(width: 10),
                 Text('¡Checkout Completado!', style: TextStyle(color: Colors.white)),
               ],
@@ -292,12 +292,24 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
-        title: const Text('Checkout Rápido'),
+        title: const Text('Nueva Venta'),
         actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Text(
+                'VTA-TEMP',
+                style: AppTheme.numericMd(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+          ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: theme.colorScheme.onSurfaceVariant),
             onPressed: _loadInitialData,
           )
         ],
@@ -317,44 +329,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       children: [
                         // CÁMARA ESCÁNER MOCK
                         Card(
-                          color: AppTheme.darkSurface,
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Column(
                               children: [
-                                Container(
-                                  height: 120,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.4),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: AppTheme.primary, width: 1.5),
-                                  ),
-                                  child: const Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Positioned(
-                                        child: Text(
-                                          '[ MODO CÁMARA ACTIVO ]',
-                                          style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                                        ),
-                                      ),
-                                      // Laser animado de escaneo
-                                      Divider(
-                                        color: Colors.red,
-                                        thickness: 1.5,
-                                        indent: 40,
-                                        endIndent: 40,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                ElevatedButton.icon(
-                                  onPressed: _simulateScan,
-                                  icon: const Icon(Icons.qr_code_scanner_outlined),
-                                  label: const Text('SIMULAR ESCANEO (BARRAS)'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.primary,
+                                TextField(
+                                  decoration: InputDecoration(
+                                    hintText: 'Buscar producto...',
+                                    prefixIcon: const Icon(Icons.search),
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.camera_alt),
+                                      onPressed: _simulateScan,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -363,55 +349,89 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         ),
                         const SizedBox(height: 16),
                         // LISTA DEL CARRITO
-                        const Text(
-                          'Detalles de la Venta',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                        const SizedBox(height: 8),
                         Expanded(
                           child: Card(
                             child: _cart.isEmpty
-                                ? const Center(
+                                ? Center(
                                     child: Text(
-                                      'Escanea o registra productos para comenzar la venta.',
-                                      style: TextStyle(color: Color(0xFF64748B)),
+                                      'Aún no tienes productos.\nAgrega tu primer producto o escanea.',
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                                     ),
                                   )
                                 : ListView.separated(
                                     itemCount: _cart.length,
-                                    separatorBuilder: (c, idx) => const Divider(color: Color(0xFF1E293B)),
+                                    separatorBuilder: (c, idx) => const Divider(height: 1),
                                     itemBuilder: (c, index) {
                                       final item = _cart[index];
-                                      return ListTile(
-                                        title: Text(item.product['name'], style: const TextStyle(color: Colors.white)),
-                                        subtitle: Text(
-                                          'Precio: \$${item.priceUsd.toStringAsFixed(2)} | Subtotal: \$${item.subtotal.toStringAsFixed(2)}',
-                                          style: const TextStyle(color: Color(0xFF94A3B8)),
-                                        ),
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                                        child: Row(
                                           children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.remove_circle_outline, color: AppTheme.error),
-                                              onPressed: () {
-                                                setState(() {
-                                                  if (item.quantity > 1) {
-                                                    item.quantity -= 1;
-                                                  } else {
-                                                    _cart.removeAt(index);
-                                                  }
-                                                });
-                                              },
+                                            // Imagen placeholder
+                                            Container(
+                                              width: 48,
+                                              height: 48,
+                                              decoration: BoxDecoration(
+                                                color: theme.colorScheme.surfaceVariant,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(Icons.inventory_2, color: Colors.grey),
                                             ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(item.product['name'], style: theme.textTheme.bodyLarge),
+                                                  Text(
+                                                    'SKU: ${item.product['barcode'] ?? 'N/A'}',
+                                                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            // Precio unitario
                                             Text(
-                                              item.quantity.toStringAsFixed(0),
-                                              style: const TextStyle(fontSize: 16, color: Colors.white),
+                                              '\$${item.priceUsd.toStringAsFixed(2)}',
+                                              style: AppTheme.numericMd(context).copyWith(color: theme.colorScheme.primary),
                                             ),
+                                            const SizedBox(width: 16),
+                                            // Controles de cantidad
+                                            Row(
+                                              children: [
+                                                IconButton(
+                                                  icon: const Icon(Icons.remove, size: 20),
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      if (item.quantity > 1) {
+                                                        item.quantity -= 1;
+                                                      } else {
+                                                        _cart.removeAt(index);
+                                                      }
+                                                    });
+                                                  },
+                                                ),
+                                                Text(
+                                                  'x${item.quantity.toStringAsFixed(0)}',
+                                                  style: AppTheme.numericMd(context),
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(Icons.add, size: 20),
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      item.quantity += 1;
+                                                    });
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(width: 8),
                                             IconButton(
-                                              icon: const Icon(Icons.add_circle_outline, color: AppTheme.success),
+                                              icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
                                               onPressed: () {
                                                 setState(() {
-                                                  item.quantity += 1;
+                                                  _cart.removeAt(index);
                                                 });
                                               },
                                             ),
@@ -430,42 +450,29 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   Expanded(
                     flex: 2,
                     child: Card(
-                      color: AppTheme.darkSurface,
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
-                              'Resumen de Totales',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Total USD:', style: TextStyle(color: Color(0xFF94A3B8))),
-                                Text(
-                                  '\$${_totalUsd.toStringAsFixed(2)}',
-                                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                                ),
-                              ],
+                            Text(
+                              'Subtotal:',
+                              style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                             ),
                             const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Total VES (tasa 40):', style: TextStyle(color: Color(0xFF94A3B8))),
-                                Text(
-                                  'Bs. ${_totalVes.toStringAsFixed(2)}',
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.secondary),
-                                ),
-                              ],
+                            Text(
+                              '\$${_totalUsd.toStringAsFixed(2)}',
+                              style: AppTheme.numericLg(context).copyWith(fontSize: 32),
                             ),
-                            const Divider(color: Color(0xFF1E293B), height: 32),
-                            const Text(
-                              'Métodos de Pago (Mixto)',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                            TextButton.icon(
+                              onPressed: () {},
+                              icon: const Icon(Icons.arrow_downward, size: 16),
+                              label: Text('ver en VES (Bs. ${_totalVes.toStringAsFixed(2)})'),
+                            ),
+                            const Divider(height: 32),
+                            Text(
+                              'Métodos de Pago',
+                              style: theme.textTheme.titleSmall,
                             ),
                             const SizedBox(height: 12),
                             // Inputs de pago
@@ -475,6 +482,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                   child: TextField(
                                     controller: _usdCashController,
                                     keyboardType: TextInputType.number,
+                                    style: AppTheme.numericMd(context),
                                     decoration: const InputDecoration(labelText: 'Efectivo \$'),
                                     onChanged: (val) => setState(() {}),
                                   ),
@@ -484,6 +492,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                   child: TextField(
                                     controller: _vesCashController,
                                     keyboardType: TextInputType.number,
+                                    style: AppTheme.numericMd(context),
                                     decoration: const InputDecoration(labelText: 'Efectivo Bs.'),
                                     onChanged: (val) => setState(() {}),
                                   ),
@@ -497,6 +506,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                   child: TextField(
                                     controller: _usdZelleController,
                                     keyboardType: TextInputType.number,
+                                    style: AppTheme.numericMd(context),
                                     decoration: const InputDecoration(labelText: 'Zelle \$'),
                                     onChanged: (val) => setState(() {}),
                                   ),
@@ -506,36 +516,34 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                   child: TextField(
                                     controller: _vesMobileController,
                                     keyboardType: TextInputType.number,
+                                    style: AppTheme.numericMd(context),
                                     decoration: const InputDecoration(labelText: 'Pago Móvil Bs.'),
                                     onChanged: (val) => setState(() {}),
                                   ),
                                 ),
                               ],
                             ),
-                            const Divider(color: Color(0xFF1E293B), height: 32),
+                            const Divider(height: 32),
                             // Indicadores de Vuelto / Resto
                             Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: _remainingUsd <= 0.005 ? AppTheme.success.withOpacity(0.1) : AppTheme.accent.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
+                                color: theme.colorScheme.secondaryContainer,
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    _remainingUsd <= 0.005 ? 'Vuelto / Cambio:' : 'Resta por pagar:',
-                                    style: TextStyle(
-                                      color: _remainingUsd <= 0.005 ? AppTheme.success : AppTheme.accent,
-                                      fontWeight: FontWeight.bold,
+                                    _remainingUsd <= 0.005 ? 'Vuelto en USD:' : 'Falta:',
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      color: theme.colorScheme.onSecondaryContainer,
                                     ),
                                   ),
                                   Text(
                                     '\$${_remainingUsd.abs().toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      color: _remainingUsd <= 0.005 ? AppTheme.success : AppTheme.accent,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                    style: AppTheme.numericLg(context).copyWith(
+                                      color: theme.colorScheme.onSecondaryContainer,
                                     ),
                                   ),
                                 ],
@@ -545,26 +553,32 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                             if (_checkoutError != null) ...[
                               Text(
                                 _checkoutError!,
-                                style: const TextStyle(color: AppTheme.error, fontSize: 13),
+                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
                               ),
                               const SizedBox(height: 12),
                             ],
-                            ElevatedButton(
-                              onPressed: _isProcessingCheckout ? null : _processCheckout,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.success,
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                            SizedBox(
+                              height: 56, // Altura dictada por el PDF
+                              child: ElevatedButton(
+                                onPressed: (_isProcessingCheckout || _remainingUsd > 0.01 || _cart.isEmpty) ? null : _processCheckout,
+                                child: _isProcessingCheckout
+                                    ? Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: theme.colorScheme.onPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          const Text('Procesando...'),
+                                        ],
+                                      )
+                                    : Text('Cobrar \$${_totalUsd.toStringAsFixed(2)}'),
                               ),
-                              child: _isProcessingCheckout
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text('CONFIRMAR Y PROCESAR CHECKOUT'),
                             ),
                           ],
                         ),

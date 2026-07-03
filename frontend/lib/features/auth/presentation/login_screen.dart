@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/theme/app_theme.dart';
 import 'package:frontend/features/auth/data/auth_repository.dart';
 import 'package:frontend/features/home/presentation/screens/dashboard_screen.dart';
 
@@ -14,8 +13,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   
-  // Inicializamos con los valores por defecto que sembramos para facilitar las pruebas
-  final _tenantController = TextEditingController(text: 'a1a2a3a4-b1b2-c1c2-d1d2-000000000001'); // Bodega El Sol
+  final _tenantController = TextEditingController(text: '001'); // Bodega El Sol
   final _usernameController = TextEditingController(text: 'alan');
   final _passwordController = TextEditingController(text: 'Admin123');
 
@@ -30,9 +28,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _errorMessage = null;
     });
 
+    final rawTenantId = _tenantController.text.trim();
+    final resolvedTenantId = rawTenantId == '001' 
+        ? 'a1a2a3a4-b1b2-c1c2-d1d2-000000000001' 
+        : rawTenantId;
+
     final authRepo = ref.read(authRepositoryProvider);
     final success = await authRepo.login(
-      tenantId: _tenantController.text.trim(),
+      tenantId: resolvedTenantId,
       usernameOrEmail: _usernameController.text.trim(),
       password: _passwordController.text,
     );
@@ -43,13 +46,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       });
 
       if (success) {
-        // Navegar al Dashboard si el inicio de sesión es exitoso
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardScreen()),
         );
       } else {
         setState(() {
-          _errorMessage = 'Error de autenticación. Verifica las credenciales.';
+          _errorMessage = 'Correo o contraseña incorrectos';
         });
       }
     }
@@ -63,164 +65,137 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  InputDecoration _outlinedDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      filled: false,
+      border: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8.0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+        borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+        borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+        borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+        borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
+      backgroundColor: theme.colorScheme.background,
       body: Center(
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Logo e Identidad Nexus
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryGlow,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.blur_on,
-                    color: AppTheme.primary,
-                    size: 64,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Center(
-                child: Text(
-                  'NEXUS',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2.0,
-                    color: Colors.white,
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Logo 80x80dp
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      Icons.storefront_rounded,
+                      size: 40,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
                   ),
                 ),
-              ),
-              const Center(
-                child: Text(
-                  'Gestión Comercial Modular',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                  ),
+                const SizedBox(height: 24),
+                
+                // Título headlineMedium
+                Text(
+                  'Sistema Comercial',
+                  style: theme.textTheme.headlineMedium,
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: 48),
+                const SizedBox(height: 32),
 
-              // Formulario de Login
-              Form(
-                key: _formKey,
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppTheme.darkSurface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF1E293B)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'Iniciar Sesión',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Campo Tenant ID
-                      TextFormField(
-                        controller: _tenantController,
-                        decoration: const InputDecoration(
-                          labelText: 'Código de Comercio (Tenant ID)',
-                          prefixIcon: Icon(Icons.business, color: Color(0xFF64748B)),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Por favor ingresa el código del comercio';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Campo Usuario/Email
-                      TextFormField(
-                        controller: _usernameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Usuario o Correo Electrónico',
-                          prefixIcon: Icon(Icons.person, color: Color(0xFF64748B)),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Por favor ingresa tu usuario o correo';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Campo Contraseña
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Contraseña',
-                          prefixIcon: Icon(Icons.lock, color: Color(0xFF64748B)),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor ingresa tu contraseña';
-                          }
-                          return null;
-                        },
-                      ),
-                      
-                      // Mensaje de Error
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: AppTheme.error, fontSize: 13),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-
-                      const SizedBox(height: 24),
-
-                      // Botón Login
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text('INGRESAR'),
-                      ),
-                    ],
-                  ),
+                // Campos Outlined (16dp spacing)
+                TextFormField(
+                  controller: _tenantController,
+                  decoration: _outlinedDecoration('Código de Comercio (Tenant ID)', Icons.business),
+                  validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
                 ),
-              ),
-              const SizedBox(height: 24),
-              const Center(
-                child: Text(
-                  'v1.0.0 (MVP) • Diseñado en Venezuela 🇻🇪',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                const SizedBox(height: 16),
+                
+                TextFormField(
+                  controller: _usernameController,
+                  keyboardType: TextInputType.emailAddress,
+                  autofocus: true,
+                  decoration: _outlinedDecoration('correo@empresa.com', Icons.email_outlined),
+                  validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  keyboardType: TextInputType.visiblePassword,
+                  decoration: _outlinedDecoration('••••••••', Icons.lock_outline),
+                  validator: (value) => value == null || value.isEmpty ? 'Requerido' : null,
+                ),
+                
+                // Mensaje de Error Inline
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _errorMessage!,
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+                  ),
+                ],
+                
+                const SizedBox(height: 32),
+
+                // Botón Filled Button 48dp
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _handleLogin,
+                  child: _isLoading
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.onPrimary),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text('Iniciando sesión...'),
+                          ],
+                        )
+                      : const Text('Iniciar Sesión'),
+                ),
+                const SizedBox(height: 16),
+                
+                // Link text button
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('¿Olvidaste tu contraseña?'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
