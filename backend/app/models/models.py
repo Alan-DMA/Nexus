@@ -111,6 +111,7 @@ class User(Base):
     email = Column(String(255), nullable=False)
     password_hash = Column(String(255), nullable=False)
     role_id = Column(UUID(as_uuid=True), ForeignKey('roles.id', ondelete='SET NULL'))
+    commission_rate = Column(Numeric(5, 2), nullable=False, default=0.00, server_default=text("0"))
     is_active = Column(Boolean, default=True, server_default=text("true"))
     created_at = Column(DateTime, default=datetime.utcnow, server_default=text("now()"))
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, server_default=text("now()"))
@@ -254,6 +255,8 @@ class Sale(Base):
     exchange_rate_applied = Column(Numeric(12, 4), nullable=False)
     status = Column(String(50), nullable=False, default='DRAFT', server_default=text("'DRAFT'"))
     total_usd = Column(Numeric(12, 4), nullable=False, default=0.0, server_default=text("0"))
+    seller_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    commission_amount_usd = Column(Numeric(12, 4), nullable=False, default=0.0, server_default=text("0"))
     created_at = Column(DateTime, default=datetime.utcnow, server_default=text("now()"))
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, server_default=text("now()"))
 
@@ -261,6 +264,7 @@ class Sale(Base):
     tenant = relationship("Tenant", back_populates="sales")
     items = relationship("SaleItem", back_populates="sale", cascade="all, delete-orphan")
     payments = relationship("SalePayment", back_populates="sale", cascade="all, delete-orphan")
+    seller = relationship("User", foreign_keys=[seller_id])
 
 
 class SaleItem(Base):

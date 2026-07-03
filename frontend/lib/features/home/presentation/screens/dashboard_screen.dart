@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/theme/app_theme.dart';
+import 'package:frontend/features/sales/presentation/checkout_screen.dart';
 
 // Proveedor simple de estado para la moneda de visualización (Bimoneda Toggle)
 // true = USD, false = VES
@@ -137,7 +138,9 @@ class DashboardScreen extends ConsumerWidget {
                   icon: Icons.qr_code_scanner,
                   color: AppTheme.primary,
                   onTap: () {
-                    // Acción venta rápida
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+                    );
                   },
                 ),
                 _buildActionCard(

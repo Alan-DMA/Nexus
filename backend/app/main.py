@@ -5,6 +5,7 @@ import asyncio
 
 from app.api.v1.auth import router as auth_router
 from app.api.v1.inventory import router as inventory_router
+from app.api.v1.sales import router as sales_router
 from app.core.tasks import release_expired_reservations_loop
 
 @asynccontextmanager
@@ -38,6 +39,7 @@ app.add_middleware(
 # Registrar Routers
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(inventory_router, prefix="/api/v1/inventory", tags=["inventory"])
+app.include_router(sales_router, prefix="/api/v1/sales", tags=["sales"])
 
 @app.get("/")
 def read_root():

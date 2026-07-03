@@ -108,7 +108,7 @@ Cuando el IDE o el agente tenga activo el servidor `stitch`, utilizaremos las si
 
 ### Módulo 2: Ventas y Comisiones (Core)
 
-#### [ ] Tarea 2.1: Máquina de Estados de Venta (RF-12)
+#### [x] Tarea 2.1: Máquina de Estados de Venta (RF-12)
 - **Descripción:** Control rígido de transiciones de ventas.
 - **Criterios de Aceptación:**
   - Los estados permitidos son: `DRAFT` $\rightarrow$ `PENDING_PAYMENT` $\rightarrow$ `PAID` $\rightarrow$ `COMPLETED`.
@@ -117,14 +117,14 @@ Cuando el IDE o el agente tenga activo el servidor `stitch`, utilizaremos las si
 - **Pruebas Requeridas:**
   - *Unitaria (Backend):* Testear transiciones inválidas (ej. de `DRAFT` directo a `COMPLETED`) y asegurar que lancen `ValidationError`.
 
-#### [ ] Tarea 2.2: Checkout Rápido e Interfaz Móvil (SR-04 & RF-14)
+#### [x] Tarea 2.2: Checkout Rápido e Interfaz Móvil (SR-04 & RF-14)
 - **Descripción:** Pantalla de ventas en el frontend con escáner e ingreso de pagos mixtos.
 - **Criterios de Aceptación:**
   - La interfaz de checkout debe permitir leer códigos de barras de forma continua usando la cámara trasera (dependencia `mobile_scanner`).
   - Al presionar cobrar, debe permitir ingresar múltiples métodos de pago (ej: $10 USD en efectivo y Bs. 200 en Pago Móvil) y calcular el vuelto exacto en la moneda seleccionada.
 - **Diseño de Referencia:** Consultar Stitch MCP (`get_screen_image` con ID de pantalla `checkout_flow`).
 
-#### [ ] Tarea 2.3: Registro de Productos al Vuelo (RF-09 / RF-21)
+#### [x] Tarea 2.3: Registro de Productos al Vuelo (RF-09 / RF-21)
 - **Descripción:** Modal rápido para crear productos durante la venta sin cancelar la operación.
 - **Criterios de Aceptación:**
   - Si un producto escaneado no existe, debe desplegarse un modal no bloqueante.
@@ -132,7 +132,7 @@ Cuando el IDE o el agente tenga activo el servidor `stitch`, utilizaremos las si
   - Al guardar, el producto se agrega a la base de datos en background y se inserta automáticamente al carrito del cajero en curso.
 - **Diseño de Referencia:** Consultar Stitch MCP (`get_screen_image` con ID de pantalla `quick_product_creation`).
 
-#### [ ] Tarea 2.4: Cálculo de Comisiones Dinámicas (RF-10)
+#### [x] Tarea 2.4: Cálculo de Comisiones Dinámicas (RF-10)
 - **Descripción:** Lógica contable para la retribución de vendedores.
 - **Criterios de Aceptación:**
   - Permite configurar porcentajes de comisión por vendedor.
