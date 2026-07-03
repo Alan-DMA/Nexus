@@ -71,7 +71,7 @@ Cuando el IDE o el agente tenga activo el servidor `stitch`, utilizaremos las si
 
 ### Módulo 1: Inventario y Abastecimiento (Core)
 
-#### [ ] Tarea 1.1: Carga Inicial Masiva (RF-01)
+#### [x] Tarea 1.1: Carga Inicial Masiva (RF-01)
 - **Descripción:** Desarrollar un script o endpoint en el backend para normalizar e insertar datos desde Excel.
 - **Criterios de Aceptación:**
   - El sistema debe aceptar un archivo `.xlsx` o `.csv` con columnas: nombre, código de barras (opcional), costo_usd, precio_usd, stock_inicial.
@@ -80,7 +80,7 @@ Cuando el IDE o el agente tenga activo el servidor `stitch`, utilizaremos las si
 - **Pruebas Requeridas:**
   - *Integración (Backend):* Enviar un archivo Excel de prueba mediante POST y verificar que los productos se inserten correctamente y se filtre el tenant apropiado.
 
-#### [ ] Tarea 1.2: Manejo Bimoneda Nativo en Inventario (RF-02)
+#### [x] Tarea 1.2: Manejo Bimoneda Nativo en Inventario (RF-02)
 - **Descripción:** Registro de costos/precios en USD y cálculo en VES en tiempo real.
 - **Criterios de Aceptación:**
   - Cada producto almacena `cost_usd`, `price_usd` y `price_ves_manual` (opcional).
@@ -88,7 +88,7 @@ Cuando el IDE o el agente tenga activo el servidor `stitch`, utilizaremos las si
 - **Pruebas Requeridas:**
   - *Unitaria (Backend):* Validar la función de cálculo de precios con tasas decimales flotantes.
 
-#### [ ] Tarea 1.3: Combos y Promociones (RF-03)
+#### [x] Tarea 1.3: Combos y Promociones (RF-03)
 - **Descripción:** Agrupación de productos con precio único y descuento proporcional de stock.
 - **Criterios de Aceptación:**
   - Al vender un Combo, el sistema debe verificar que haya stock disponible de todos los componentes individuales en el almacén especificado.
@@ -96,7 +96,7 @@ Cuando el IDE o el agente tenga activo el servidor `stitch`, utilizaremos las si
 - **Pruebas Requeridas:**
   - *Unitaria (Backend):* Intentar vender un combo donde un artículo no tiene suficiente stock; debe fallar con excepción `INSUFFICIENT_STOCK`.
 
-#### [ ] Tarea 1.4: Stock Reservado con TTL (RF-06)
+#### [x] Tarea 1.4: Stock Reservado con TTL (RF-06)
 - **Descripción:** Liberar automáticamente el stock reservado en compras no cobradas tras 15 minutos.
 - **Criterios de Aceptación:**
   - Las ventas en estado `PENDING_PAYMENT` mueven las cantidades de `stock_available` a `stock_reserved`.
