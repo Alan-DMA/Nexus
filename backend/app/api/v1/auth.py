@@ -115,13 +115,31 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)):
     if not payload.tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Se requiere el tenant_id para iniciar sesión en una base de datos multi-tenant."
+            detail="Se requiere el tenant_id o código de comercio para iniciar sesión."
         )
+
+    # Resolver tenant_id en caso de que se pase el código de comercio (ej: "150467")
+    target_tenant_id = None
+    try:
+        target_tenant_id = UUID(str(payload.tenant_id))
+    except (ValueError, AttributeError):
+        pass
+
+    if not target_tenant_id:
+        tenant_res = await db.execute(select(Tenant).where(Tenant.code == str(payload.tenant_id)))
+        found_tenant = tenant_res.scalars().first()
+        if found_tenant:
+            target_tenant_id = found_tenant.id
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No se encontró ningún comercio con el código '{payload.tenant_id}'."
+            )
 
     # Configurar el contexto del tenant en la sesión de la base de datos
     await db.execute(
         text("SELECT set_config('app.current_tenant', :tenant_id, false)"),
-        {"tenant_id": str(payload.tenant_id)}
+        {"tenant_id": str(target_tenant_id)}
     )
 
     # Buscar usuario por email o username (dentro de las restricciones RLS de este tenant)

@@ -15,10 +15,7 @@ class SalesRepository {
     try {
       final response = await _dio.post(
         '/api/v1/sales',
-        data: {
-          if (sellerId != null) 'seller_id': sellerId,
-          'items': items,
-        },
+        data: {'seller_id': ?sellerId, 'items': items},
       );
       return response.data as Map<String, dynamic>;
     } catch (e) {

@@ -35,6 +35,7 @@ class Tenant(Base):
     name = Column(String(255), nullable=False)
     preferred_payment_method = Column(String(50))
     payment_instructions = Column(Text)
+    code = Column(String(20), unique=True, nullable=False)
 
     plan_id = Column(UUID(as_uuid=True), ForeignKey('plans.id', ondelete='SET NULL'))
     current_exchange_rate = Column(Numeric(12, 4), nullable=False, default=36.50, server_default=text("36.50"))

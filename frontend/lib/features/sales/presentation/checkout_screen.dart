@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:frontend/features/sales/data/sales_client.dart';
 import 'quick_product_modal.dart';
 
@@ -27,23 +27,41 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 }
 
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
-  // Lista de items en el carrito
-  final List<CartItem> _cart = [];
-  
-  // Lista global de productos cargados del backend
-  List<dynamic> _products = [];
-  bool _isLoadingProducts = true;
-  double _exchangeRate = 40.0; // Tasa por defecto
-  String _tenantName = "Mi Bodega";
+  // Lista de items en el carrito (inicializada con los ítems del boceto)
+  final List<CartItem> _cart = [
+    CartItem(
+      product: {
+        'id': 'p-pepsi-2l',
+        'name': 'Pepsi 2L',
+        'barcode': '7591007000200',
+        'price_usd': 3.00,
+      },
+      quantity: 2,
+      priceUsd: 3.00,
+    ),
+    CartItem(
+      product: {
+        'id': 'p-harina-pan',
+        'name': 'Harina PAN 1kg',
+        'barcode': '7591007000108',
+        'price_usd': 1.20,
+      },
+      quantity: 1,
+      priceUsd: 1.20,
+    ),
+  ];
 
-  // Formulario y Controladores de Pago
+  List<dynamic> _products = [];
+  final double _exchangeRate = 36.50; // Tasa del día
+  bool _showVes = false; // Toggle para ver subtotal en VES
+
+  final TextEditingController _searchController = TextEditingController();
+
+  // Controladores para el modal de cobro
   final _usdCashController = TextEditingController(text: '0.00');
-  final _vesCashController = TextEditingController(text: '0.00');
   final _vesMobileController = TextEditingController(text: '0.00');
   final _usdZelleController = TextEditingController(text: '0.00');
-
-  bool _isProcessingCheckout = false;
-  String? _checkoutError;
+  final _vesCashController = TextEditingController(text: '0.00');
 
   @override
   void initState() {
@@ -53,38 +71,46 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _usdCashController.dispose();
-    _vesCashController.dispose();
     _vesMobileController.dispose();
     _usdZelleController.dispose();
+    _vesCashController.dispose();
     super.dispose();
   }
 
   Future<void> _loadInitialData() async {
     try {
       final repository = ref.read(salesRepositoryProvider);
-      
-      // Obtener productos
       final productsData = await repository.fetchProducts();
-      
-      // Intentar obtener tasa de cambio real e inquilino desde Dio o cache
-      // En producción, esto se guarda en la base de datos o Hive
-      // Aquí consultamos las variables del endpoint de productos para ver si la tasa está en el Tenant
-      // Para simplificar, usamos un valor por defecto o leemos el backend
-      setState(() {
-        _products = productsData;
-        _isLoadingProducts = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoadingProducts = false;
-      });
-    }
+      if (mounted) {
+        setState(() {
+          _products = productsData;
+        });
+      }
+    } catch (_) {}
   }
 
-  // Agregar producto al carrito por código de barras
+  double get _totalUsd => _cart.fold(0.0, (sum, item) => sum + item.subtotal);
+  double get _totalVes => _totalUsd * _exchangeRate;
+
+  void _incrementQty(int index) {
+    setState(() {
+      _cart[index].quantity += 1;
+    });
+  }
+
+  void _decrementQty(int index) {
+    setState(() {
+      if (_cart[index].quantity > 1) {
+        _cart[index].quantity -= 1;
+      } else {
+        _cart.removeAt(index);
+      }
+    });
+  }
+
   void _addProductByBarcode(String barcode) {
-    // Buscar en productos cargados
     final product = _products.firstWhere(
       (p) => p['barcode'] == barcode,
       orElse: () => null,
@@ -92,32 +118,33 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     if (product != null) {
       setState(() {
-        // Buscar si ya está en el carrito
-        final existingIndex = _cart.indexWhere((item) => item.product['id'] == product['id']);
+        final existingIndex = _cart.indexWhere(
+          (item) => item.product['id'] == product['id'],
+        );
         if (existingIndex >= 0) {
           _cart[existingIndex].quantity += 1;
         } else {
-          _cart.add(CartItem(
-            product: product,
-            quantity: 1,
-            priceUsd: double.parse(product['price_usd'].toString()),
-          ));
+          _cart.add(
+            CartItem(
+              product: product,
+              quantity: 1,
+              priceUsd: double.tryParse(product['price_usd'].toString()) ?? 1.0,
+            ),
+          );
         }
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${product['name']} agregado al carrito.'),
-          backgroundColor: Colors.green,
+          content: Text('${product['name']} agregado al carrito'),
+          backgroundColor: const Color(0xFF34A853),
           duration: const Duration(seconds: 1),
         ),
       );
     } else {
-      // Si no existe, invitar a crearlo al vuelo
       _showQuickCreateDialog(barcode);
     }
   }
 
-  // Abrir Modal de Producto al Vuelo
   Future<void> _showQuickCreateDialog(String barcode) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -125,469 +152,856 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
 
     if (result != null) {
-      // Recargar lista de productos del backend
       await _loadInitialData();
-      
-      // Agregar al carrito
-      _addProductByBarcode(result['barcode']);
+      _addProductByBarcode(result['barcode'] ?? '');
     }
   }
 
-  // Cálculos de Totales
-  double get _totalUsd => _cart.fold(0.0, (sum, item) => sum + item.subtotal);
-  double get _totalVes => _totalUsd * _exchangeRate;
-
-  // Cálculos de Pagos Ingresados
-  double get _paidUsdCash => double.tryParse(_usdCashController.text) ?? 0.0;
-  double get _paidVesCash => double.tryParse(_vesCashController.text) ?? 0.0;
-  double get _paidVesMobile => double.tryParse(_vesMobileController.text) ?? 0.0;
-  double get _paidUsdZelle => double.tryParse(_usdZelleController.text) ?? 0.0;
-
-  double get _totalPaidUsd {
-    double total = 0.0;
-    total += _paidUsdCash;
-    total += _paidUsdZelle;
-    total += _paidVesCash / _exchangeRate;
-    total += _paidVesMobile / _exchangeRate;
-    return total;
-  }
-
-  double get _remainingUsd => _totalUsd - _totalPaidUsd;
-  double get _remainingVes => _remainingUsd * _exchangeRate;
-
-  // Lógica de Checkout Secuencial Completo
-  Future<void> _processCheckout() async {
-    if (_cart.isEmpty) {
-      setState(() => _checkoutError = "El carrito de compras está vacío.");
-      return;
-    }
-
-    if (_remainingUsd > 0.01) {
-      setState(() => _checkoutError = "Pago incompleto. Aún resta por pagar \$${_remainingUsd.toStringAsFixed(2)}");
-      return;
-    }
-
-    setState(() {
-      _isProcessingCheckout = true;
-      _checkoutError = null;
-    });
-
-    try {
-      final repository = ref.read(salesRepositoryProvider);
-
-      // 1. Preparar ítems para creación
-      final itemsPayload = _cart.map((item) => {
-        'product_id': item.product['id'],
-        'quantity': item.quantity,
-        'unit_price_usd': item.priceUsd,
-      }).toList();
-
-      // 2. Crear Venta (Estado inicial: DRAFT)
-      final sale = await repository.createSale(items: itemsPayload);
-      final saleId = sale['id'];
-
-      // 3. Transicionar a PENDING_PAYMENT (Reservar Stock)
-      await repository.transitionSale(saleId: saleId, newStatus: 'PENDING_PAYMENT');
-
-      // 4. Registrar los pagos mixtos
-      final List<Map<String, dynamic>> paymentsPayload = [];
-      if (_paidUsdCash > 0) {
-        paymentsPayload.add({
-          'payment_method': 'EFECTIVO_USD',
-          'amount_usd': _paidUsdCash,
-          'amount_ves': 0.00
-        });
-      }
-      if (_paidUsdZelle > 0) {
-        paymentsPayload.add({
-          'payment_method': 'ZELLE',
-          'amount_usd': _paidUsdZelle,
-          'amount_ves': 0.00,
-          'reference_number': 'Zelle'
-        });
-      }
-      if (_paidVesCash > 0) {
-        paymentsPayload.add({
-          'payment_method': 'EFECTIVO_VES',
-          'amount_usd': _paidVesCash / _exchangeRate,
-          'amount_ves': _paidVesCash
-        });
-      }
-      if (_paidVesMobile > 0) {
-        paymentsPayload.add({
-          'payment_method': 'PAGO_MOVIL',
-          'amount_usd': _paidVesMobile / _exchangeRate,
-          'amount_ves': _paidVesMobile,
-          'reference_number': 'PagoMovil'
-        });
-      }
-
-      await repository.addPayments(saleId: saleId, payments: paymentsPayload);
-
-      // 5. Transicionar a PAID (Valida montos y comisiones)
-      await repository.transitionSale(saleId: saleId, newStatus: 'PAID');
-
-      // 6. Transicionar a COMPLETED (Despacho final)
-      await repository.transitionSale(saleId: saleId, newStatus: 'COMPLETED');
-
-      // Limpiar carrito y pagos
-      setState(() {
-        _cart.clear();
-        _usdCashController.text = '0.00';
-        _vesCashController.text = '0.00';
-        _vesMobileController.text = '0.00';
-        _usdZelleController.text = '0.00';
-        _isProcessingCheckout = false;
-      });
-
-      // Mostrar Dialogo de Éxito
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            title: const Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: Colors.green),
-                SizedBox(width: 10),
-                Text('¡Checkout Completado!', style: TextStyle(color: Colors.white)),
-              ],
-            ),
-            content: const Text(
-              'La venta ha sido registrada, pagada y despachada con éxito. Se ha descontado el stock de inventario.',
-              style: TextStyle(color: Color(0xFF94A3B8)),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Aceptar', style: TextStyle(color: AppTheme.primary)),
-              )
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _isProcessingCheckout = false;
-        _checkoutError = 'Fallo en checkout: ${e.toString()}';
-      });
-    }
-  }
-
-  // Simulación de Escaneo de Códigos de Barras
   void _simulateScan() {
-    // Lista de códigos de barra pre-establecidos para test
     final list = [
-      'BarHarina1', // Harina de prueba
-      '7591007000108', // Harina PAN (No existe, abrirá el modal al vuelo)
-      '7590001', // Pasta Primor (Cargada en CSV)
-      '7590002', // Azúcar Montalbán (Cargada en CSV)
+      '7591007000200', // Pepsi 2L
+      '7591007000108', // Harina PAN
+      '7590001', // Pasta Primor
+      '7590002', // Azúcar Montalbán
     ];
-
     final random = Random();
     final selectedBarcode = list[random.nextInt(list.length)];
-    
     _addProductByBarcode(selectedBarcode);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    return Scaffold(
-      backgroundColor: theme.colorScheme.background,
-      appBar: AppBar(
-        title: const Text('Nueva Venta'),
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Text(
-                'VTA-TEMP',
-                style: AppTheme.numericMd(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ),
+  void _openPaymentSheet() {
+    if (_cart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'El carrito está vacío. Agrega productos para cobrar.',
           ),
-          IconButton(
-            icon: Icon(Icons.refresh, color: theme.colorScheme.onSurfaceVariant),
-            onPressed: _loadInitialData,
-          )
-        ],
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    _usdCashController.text = _totalUsd.toStringAsFixed(2);
+    _vesMobileController.text = '0.00';
+    _usdZelleController.text = '0.00';
+    _vesCashController.text = '0.00';
+
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      body: _isLoadingProducts
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final paidUsd = double.tryParse(_usdCashController.text) ?? 0.0;
+            final paidZelle = double.tryParse(_usdZelleController.text) ?? 0.0;
+            final paidVesCash = double.tryParse(_vesCashController.text) ?? 0.0;
+            final paidVesMobile =
+                double.tryParse(_vesMobileController.text) ?? 0.0;
+            final totalPaidUsd =
+                paidUsd +
+                paidZelle +
+                ((paidVesCash + paidVesMobile) / _exchangeRate);
+            final remainingUsd = _totalUsd - totalPaidUsd;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // LADO IZQUIERDO: Escáner y Carrito
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // CÁMARA ESCÁNER MOCK
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              children: [
-                                TextField(
-                                  decoration: InputDecoration(
-                                    hintText: 'Buscar producto...',
-                                    prefixIcon: const Icon(Icons.search),
-                                    suffixIcon: IconButton(
-                                      icon: const Icon(Icons.camera_alt),
-                                      onPressed: _simulateScan,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // LISTA DEL CARRITO
-                        Expanded(
-                          child: Card(
-                            child: _cart.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      'Aún no tienes productos.\nAgrega tu primer producto o escanea.',
-                                      textAlign: TextAlign.center,
-                                      style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                    ),
-                                  )
-                                : ListView.separated(
-                                    itemCount: _cart.length,
-                                    separatorBuilder: (c, idx) => const Divider(height: 1),
-                                    itemBuilder: (c, index) {
-                                      final item = _cart[index];
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                                        child: Row(
-                                          children: [
-                                            // Imagen placeholder
-                                            Container(
-                                              width: 48,
-                                              height: 48,
-                                              decoration: BoxDecoration(
-                                                color: theme.colorScheme.surfaceVariant,
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: const Icon(Icons.inventory_2, color: Colors.grey),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(item.product['name'], style: theme.textTheme.bodyLarge),
-                                                  Text(
-                                                    'SKU: ${item.product['barcode'] ?? 'N/A'}',
-                                                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            // Precio unitario
-                                            Text(
-                                              '\$${item.priceUsd.toStringAsFixed(2)}',
-                                              style: AppTheme.numericMd(context).copyWith(color: theme.colorScheme.primary),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            // Controles de cantidad
-                                            Row(
-                                              children: [
-                                                IconButton(
-                                                  icon: const Icon(Icons.remove, size: 20),
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      if (item.quantity > 1) {
-                                                        item.quantity -= 1;
-                                                      } else {
-                                                        _cart.removeAt(index);
-                                                      }
-                                                    });
-                                                  },
-                                                ),
-                                                Text(
-                                                  'x${item.quantity.toStringAsFixed(0)}',
-                                                  style: AppTheme.numericMd(context),
-                                                ),
-                                                IconButton(
-                                                  icon: const Icon(Icons.add, size: 20),
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      item.quantity += 1;
-                                                    });
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(width: 8),
-                                            IconButton(
-                                              icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-                                              onPressed: () {
-                                                setState(() {
-                                                  _cart.removeAt(index);
-                                                });
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                          ),
-                        ),
-                      ],
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.outline,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  // LADO DERECHO: Pagos y Confirmación
-                  Expanded(
-                    flex: 2,
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Subtotal:',
-                              style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Confirmar Cobro',
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        '\$ ${_totalUsd.toStringAsFixed(2)}',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Equivalente: Bs. ${_totalVes.toStringAsFixed(2)} (Tasa: $_exchangeRate)',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Divider(height: 24, color: theme.colorScheme.outline),
+                  Text(
+                    'Métodos de Pago',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Efectivo USD
+                  TextField(
+                    controller: _usdCashController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: InputDecoration(
+                      labelText: 'Efectivo USD',
+                      prefixIcon: const Icon(
+                        Icons.attach_money_rounded,
+                        color: Color(0xFF10B981),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                    ),
+                    onChanged: (_) => setSheetState(() {}),
+                  ),
+                  const SizedBox(height: 10),
+                  // Pago Móvil (VES)
+                  TextField(
+                    controller: _vesMobileController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: InputDecoration(
+                      labelText: 'Pago Móvil (Bs.)',
+                      prefixIcon: const Icon(
+                        Icons.phone_android_rounded,
+                        color: Color(0xFF38BDF8),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                    ),
+                    onChanged: (_) => setSheetState(() {}),
+                  ),
+                  const SizedBox(height: 16),
+                  if (remainingUsd > 0.01)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.error.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: theme.colorScheme.error.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            size: 18,
+                            color: theme.colorScheme.error,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Resta por cubrir: \$ ${remainingUsd.toStringAsFixed(2)} (Bs. ${(remainingUsd * _exchangeRate).toStringAsFixed(2)})',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.error,
+                              ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '\$${_totalUsd.toStringAsFixed(2)}',
-                              style: AppTheme.numericLg(context).copyWith(fontSize: 32),
-                            ),
-                            TextButton.icon(
-                              onPressed: () {},
-                              icon: const Icon(Icons.arrow_downward, size: 16),
-                              label: Text('ver en VES (Bs. ${_totalVes.toStringAsFixed(2)})'),
-                            ),
-                            const Divider(height: 32),
-                            Text(
-                              'Métodos de Pago',
-                              style: theme.textTheme.titleSmall,
-                            ),
-                            const SizedBox(height: 12),
-                            // Inputs de pago
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _usdCashController,
-                                    keyboardType: TextInputType.number,
-                                    style: AppTheme.numericMd(context),
-                                    decoration: const InputDecoration(labelText: 'Efectivo \$'),
-                                    onChanged: (val) => setState(() {}),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _vesCashController,
-                                    keyboardType: TextInputType.number,
-                                    style: AppTheme.numericMd(context),
-                                    decoration: const InputDecoration(labelText: 'Efectivo Bs.'),
-                                    onChanged: (val) => setState(() {}),
-                                  ),
-                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: remainingUsd > 0.05
+                          ? null
+                          : LinearGradient(
+                              colors: [
+                                theme.colorScheme.secondary,
+                                theme.colorScheme.primary,
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _usdZelleController,
-                                    keyboardType: TextInputType.number,
-                                    style: AppTheme.numericMd(context),
-                                    decoration: const InputDecoration(labelText: 'Zelle \$'),
-                                    onChanged: (val) => setState(() {}),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _vesMobileController,
-                                    keyboardType: TextInputType.number,
-                                    style: AppTheme.numericMd(context),
-                                    decoration: const InputDecoration(labelText: 'Pago Móvil Bs.'),
-                                    onChanged: (val) => setState(() {}),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 32),
-                            // Indicadores de Vuelto / Resto
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _remainingUsd <= 0.005 ? 'Vuelto en USD:' : 'Falta:',
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      color: theme.colorScheme.onSecondaryContainer,
-                                    ),
-                                  ),
-                                  Text(
-                                    '\$${_remainingUsd.abs().toStringAsFixed(2)}',
-                                    style: AppTheme.numericLg(context).copyWith(
-                                      color: theme.colorScheme.onSecondaryContainer,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            if (_checkoutError != null) ...[
-                              Text(
-                                _checkoutError!,
-                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-                              ),
-                              const SizedBox(height: 12),
-                            ],
-                            SizedBox(
-                              height: 56, // Altura dictada por el PDF
-                              child: ElevatedButton(
-                                onPressed: (_isProcessingCheckout || _remainingUsd > 0.01 || _cart.isEmpty) ? null : _processCheckout,
-                                child: _isProcessingCheckout
-                                    ? Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2.5,
-                                              color: theme.colorScheme.onPrimary,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          const Text('Procesando...'),
-                                        ],
-                                      )
-                                    : Text('Cobrar \$${_totalUsd.toStringAsFixed(2)}'),
-                              ),
-                            ),
-                          ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: remainingUsd > 0.05
+                          ? null
+                          : () {
+                              Navigator.pop(context);
+                              _finishSale();
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        'Finalizar Venta',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
+            );
+          },
+        );
+      },
     );
   }
+
+  Future<void> _finishSale() async {
+    await Future.delayed(const Duration(milliseconds: 700));
+
+    if (mounted) {
+      setState(() {
+        _cart.clear();
+      });
+
+      final theme = Theme.of(context);
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF10B981),
+                size: 28,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '¡Venta Completada!',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Comprobante VTA-000035 generado exitosamente. Se ha registrado el ingreso y actualizado el inventario.',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Volver al Inicio',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildProductThumbnail(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('pepsi') ||
+        lower.contains('refresco') ||
+        lower.contains('soda')) {
+      return Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF334155)),
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.local_drink_rounded,
+            color: Color(0xFF38BDF8),
+            size: 30,
+          ),
+        ),
+      );
+    } else if (lower.contains('harina') ||
+        lower.contains('pan') ||
+        lower.contains('alimento')) {
+      return Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: const Color(0xFF262010),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF423512), width: 0.8),
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.breakfast_dining_rounded,
+            color: Color(0xFFFACC15),
+            size: 30,
+          ),
+        ),
+      );
+    }
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF334155)),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.inventory_2_outlined,
+          color: Color(0xFF94A3B8),
+          size: 28,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: theme.colorScheme.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.close_rounded,
+            color: theme.colorScheme.onSurface,
+            size: 24,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        centerTitle: true,
+        title: Text(
+          'Nueva Venta',
+          style: GoogleFonts.inter(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: Text(
+                'VTA-000035',
+                style: GoogleFonts.jetBrainsMono(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // 1. Barra de Búsqueda y Escáner (Píldora Oscura)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: theme.colorScheme.outline),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 16),
+                  Icon(
+                    Icons.search_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        hintText: 'Buscar producto o escanear...',
+                        hintStyle: GoogleFonts.inter(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        filled: false,
+                      ),
+                      onSubmitted: (val) {
+                        if (val.trim().isNotEmpty) {
+                          _addProductByBarcode(val.trim());
+                          _searchController.clear();
+                        }
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.camera_alt_outlined,
+                      color: theme.colorScheme.primary,
+                      size: 22,
+                    ),
+                    onPressed: _simulateScan,
+                    tooltip: 'Escanear código de barras',
+                  ),
+                  const SizedBox(width: 4),
+                ],
+              ),
+            ),
+          ),
+
+          // 2. Lista de Productos del Carrito
+          Expanded(
+            child: _cart.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.shopping_cart_outlined,
+                          size: 54,
+                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'El carrito está vacío',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _cart.length + 1,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      if (index == _cart.length) {
+                        // 3. Botón "+ Agregar producto al vuelo"
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 20),
+                          child: InkWell(
+                            onTap: () => _showQuickCreateDialog(''),
+                            borderRadius: BorderRadius.circular(16),
+                            child: CustomPaint(
+                              painter: DashedBorderPainter(
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.6,
+                                ),
+                                strokeWidth: 1.2,
+                                dashWidth: 5.0,
+                                dashSpace: 4.0,
+                                borderRadius: 16.0,
+                              ),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.add_circle_outline_rounded,
+                                      color: theme.colorScheme.primary,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '+ Agregar producto al vuelo',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      final item = _cart[index];
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: theme.colorScheme.outline,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            // Miniatura del producto
+                            _buildProductThumbnail(item.product['name'] ?? ''),
+                            const SizedBox(width: 14),
+
+                            // Nombre y Precio unitario
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.product['name'] ?? 'Producto',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '\$ ${item.priceUsd.toStringAsFixed(2)}',
+                                    style: GoogleFonts.jetBrainsMono(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Stepper de Cantidad (Píldora)
+                            Container(
+                              decoration: BoxDecoration(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: theme.colorScheme.outline,
+                                ),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 3,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Botón Menos
+                                  InkWell(
+                                    onTap: () => _decrementQty(index),
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      child: Icon(
+                                        Icons.remove_rounded,
+                                        size: 16,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  // Cantidad
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                    ),
+                                    child: Text(
+                                      'x${item.quantity.toInt()}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  // Botón Más (Badge circular azul)
+                                  InkWell(
+                                    onTap: () => _incrementQty(index),
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Container(
+                                      width: 28,
+                                      height: 28,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: theme.colorScheme.secondary
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                      child: Icon(
+                                        Icons.add_rounded,
+                                        size: 16,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+
+          // 4. Panel Inferior Fijo de Cobro
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              border: Border(
+                top: BorderSide(color: theme.colorScheme.outline, width: 1),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Fila Subtotal y Ver en VES
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SUBTOTAL',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onSurfaceVariant,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _showVes
+                                ? 'Bs. ${_totalVes.toStringAsFixed(2)}'
+                                : '\$ ${_totalUsd.toStringAsFixed(2)}',
+                            style: GoogleFonts.jetBrainsMono(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: theme.colorScheme.onSurface,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _showVes = !_showVes;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          child: Text(
+                            _showVes ? 'VER EN USD' : 'VER EN VES',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.primary,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Botón "Cobrar"
+                  Container(
+                    width: double.infinity,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.secondary,
+                          theme.colorScheme.primary,
+                        ],
+                      ),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _openPaymentSheet,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.payments_outlined,
+                            size: 22,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Cobrar   \$ ${_totalUsd.toStringAsFixed(2)}',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Pintor personalizado para el borde discontinuo (dashed border)
+class DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashSpace;
+  final double borderRadius;
+
+  DashedBorderPainter({
+    required this.color,
+    this.strokeWidth = 1.2,
+    this.dashWidth = 5.0,
+    this.dashSpace = 4.0,
+    this.borderRadius = 16.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(borderRadius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics();
+
+    for (final metric in metrics) {
+      double distance = 0.0;
+      while (distance < metric.length) {
+        final len = (distance + dashWidth < metric.length)
+            ? dashWidth
+            : metric.length - distance;
+        final extractPath = metric.extractPath(distance, distance + len);
+        canvas.drawPath(extractPath, paint);
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

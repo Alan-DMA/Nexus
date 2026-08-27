@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from uuid import UUID
-from typing import Optional, List
+from typing import Optional, List, Union
 
 # --- Esquemas de Usuario ---
 class UserRegister(BaseModel):
@@ -30,6 +30,7 @@ class TenantRegister(BaseModel):
 
 class TenantResponse(BaseModel):
     id: UUID
+    code: Optional[str] = None
     name: str
     subscription_status: str
     plan_id: Optional[UUID] = None
@@ -40,7 +41,7 @@ class TenantResponse(BaseModel):
 
 # --- Esquemas de Autenticación ---
 class UserLogin(BaseModel):
-    tenant_id: Optional[UUID] = None  # Opcional si se puede resolver de otra forma, pero recomendado
+    tenant_id: Optional[Union[UUID, str]] = None  # Puede ser UUID o el código comercial (ej: 150467)
     username_or_email: str
     password: str
 

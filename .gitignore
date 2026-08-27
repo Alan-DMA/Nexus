@@ -1,6 +1,10 @@
 # Python/Virtual Environment
 backend/.venv/
 .venv/
+Include/
+Lib/
+Scripts/
+pyvenv.cfg
 __pycache__/
 *.pyc
 backend/.env

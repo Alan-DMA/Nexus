@@ -3,8 +3,8 @@ import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import AsyncSessionLocal
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models.models import (
     Plan, Tenant, Permission, Role, User, Category, Product, 
@@ -12,8 +12,12 @@ from app.models.models import (
     role_permissions
 )
 
+su_url = settings.DATABASE_URL.replace("nexus_app", "postgres")
+su_engine = create_async_engine(su_url, echo=False)
+SuSessionLocal = async_sessionmaker(su_engine, expire_on_commit=False)
+
 async def seed_data():
-    async with AsyncSessionLocal() as session:
+    async with SuSessionLocal() as session:
         try:
             print("Iniciando la siembra de datos...")
             
@@ -83,14 +87,14 @@ async def seed_data():
             await session.commit()
             print("Permisos globales creados.")
 
-            # --- 3. Crear Tenant de Prueba (Bodega El Sol) ---
             tenant_sol = Tenant(
                 id=uuid.UUID("a1a2a3a4-b1b2-c1c2-d1d2-000000000001"),
                 name="Bodega El Sol",
                 preferred_payment_method="PAGO_MOVIL",
                 payment_instructions="Pago Móvil Banesco (0412-1234567, RIF: V-12345678-9)",
                 plan_id=plan_comercio.id,
-                subscription_status="ACTIVE"
+                subscription_status="ACTIVE",
+                code="150467"
             )
             session.add(tenant_sol)
             await session.commit()
@@ -155,11 +159,11 @@ async def seed_data():
             user_owner = User(
                 id=uuid.UUID("e1a2a3a4-b1b2-c1c2-d1d2-000000000001"),
                 tenant_id=tenant_sol.id,
-                username="alan",
-                email="alan@nexus.com",
-                password_hash=get_password_hash("Admin123"), # Encriptar contraseña
+                username="alandavidma",
+                email="alandavidma@gmail.com",
+                password_hash=get_password_hash("Ab123456"), # Encriptar contraseña
                 role_id=role_owner.id,
-                is_active=True
+                is_active=True,
             )
             user_cashier = User(
                 id=uuid.UUID("e1a2a3a4-b1b2-c1c2-d1d2-000000000002"),

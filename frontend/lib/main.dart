@@ -6,6 +6,7 @@ import 'package:frontend/features/auth/presentation/login_screen.dart';
 import 'package:frontend/features/home/presentation/screens/dashboard_screen.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:frontend/core/theme/theme_provider.dart';
 
 void main() async {
   // Asegurar que los widgets de Flutter estén vinculados
@@ -31,11 +32,14 @@ class NexusApp extends ConsumerWidget {
     // Si ya está autenticado, cargamos el Dashboard. Si no, cargamos el Login.
     final authRepo = ref.watch(authRepositoryProvider);
     final isAuthed = authRepo.isAuthenticated;
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
       title: 'Nexus',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme, // Cargar tema claro del diseño HSL
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       home: isAuthed ? const DashboardScreen() : const LoginScreen(),
     );
   }

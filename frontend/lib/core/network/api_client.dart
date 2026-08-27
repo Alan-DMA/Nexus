@@ -7,9 +7,8 @@ final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
       // URL base del backend. 
-      // NOTA: Para emuladores Android, usar 'http://10.0.2.2:8000'.
-      // Para desarrollo web o local de escritorio/iOS, usar 'http://127.0.0.1:8000'.
-      baseUrl: 'http://127.0.0.1:8000',
+      // Usamos la IP de red local (192.168.10.9) para permitir peticiones tanto de celular como de web/escritorio.
+      baseUrl: 'http://192.168.10.9:8000',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       headers: {

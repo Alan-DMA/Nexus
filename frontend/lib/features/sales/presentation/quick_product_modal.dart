@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/theme/app_theme.dart';
 import 'package:frontend/features/sales/data/sales_client.dart';
 
 class QuickProductModal extends ConsumerStatefulWidget {
@@ -14,7 +13,7 @@ class QuickProductModal extends ConsumerStatefulWidget {
 
 class _QuickProductModalState extends ConsumerState<QuickProductModal> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late final TextEditingController _nameController;
   late final TextEditingController _barcodeController;
   final _costController = TextEditingController(text: '0.00');
@@ -72,9 +71,14 @@ class _QuickProductModalState extends ConsumerState<QuickProductModal> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Dialog(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: theme.colorScheme.outline),
+      ),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 450),
         padding: const EdgeInsets.all(24),
@@ -88,37 +92,48 @@ class _QuickProductModalState extends ConsumerState<QuickProductModal> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Producto al Vuelo',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF64748B)),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                const SizedBox(height: 6),
+                Text(
                   'Registra rápidamente un producto en el inventario sin salir del checkout comercial.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 if (_errorMessage != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.error.withOpacity(0.1),
+                      color: theme.colorScheme.error.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppTheme.error.withOpacity(0.3)),
+                      border: Border.all(
+                        color: theme.colorScheme.error.withValues(alpha: 0.4),
+                      ),
                     ),
                     child: Text(
                       _errorMessage!,
-                      style: const TextStyle(color: AppTheme.error, fontSize: 13),
+                      style: TextStyle(
+                        color: theme.colorScheme.error,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -126,9 +141,13 @@ class _QuickProductModalState extends ConsumerState<QuickProductModal> {
                 // Nombre
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
+                  style: TextStyle(color: theme.colorScheme.onSurface),
+                  decoration: InputDecoration(
                     labelText: 'Nombre del Producto',
-                    prefixIcon: Icon(Icons.shopping_bag_outlined),
+                    prefixIcon: Icon(
+                      Icons.shopping_bag_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   validator: (val) => val == null || val.trim().isEmpty
                       ? 'Nombre obligatorio'
@@ -138,9 +157,13 @@ class _QuickProductModalState extends ConsumerState<QuickProductModal> {
                 // Código de barras
                 TextFormField(
                   controller: _barcodeController,
-                  decoration: const InputDecoration(
+                  style: TextStyle(color: theme.colorScheme.onSurface),
+                  decoration: InputDecoration(
                     labelText: 'Código de Barras',
-                    prefixIcon: Icon(Icons.qr_code_scanner_outlined),
+                    prefixIcon: Icon(
+                      Icons.qr_code_scanner_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   validator: (val) => val == null || val.trim().isEmpty
                       ? 'Código de barras obligatorio'
@@ -153,10 +176,16 @@ class _QuickProductModalState extends ConsumerState<QuickProductModal> {
                     Expanded(
                       child: TextFormField(
                         controller: _costController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
                           labelText: 'Costo (USD)',
-                          prefixIcon: Icon(Icons.money_off_outlined),
+                          prefixIcon: Icon(
+                            Icons.money_off_outlined,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         validator: (val) {
                           if (val == null || val.isEmpty) return 'Obligatorio';
@@ -170,10 +199,16 @@ class _QuickProductModalState extends ConsumerState<QuickProductModal> {
                     Expanded(
                       child: TextFormField(
                         controller: _priceController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
                           labelText: 'Precio (USD)',
-                          prefixIcon: Icon(Icons.attach_money_outlined),
+                          prefixIcon: Icon(
+                            Icons.attach_money_outlined,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                         validator: (val) {
                           if (val == null || val.isEmpty) return 'Obligatorio';
@@ -188,10 +223,14 @@ class _QuickProductModalState extends ConsumerState<QuickProductModal> {
                 // Cantidad Inicial
                 TextFormField(
                   controller: _stockController,
+                  style: TextStyle(color: theme.colorScheme.onSurface),
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Cantidad Inicial (Almacén Principal)',
-                    prefixIcon: Icon(Icons.warehouse_outlined),
+                    prefixIcon: Icon(
+                      Icons.warehouse_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   validator: (val) {
                     if (val == null || val.isEmpty) return 'Obligatorio';
@@ -200,25 +239,44 @@ class _QuickProductModalState extends ConsumerState<QuickProductModal> {
                   },
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.secondary,
+                        theme.colorScheme.primary,
+                      ],
                     ),
                   ),
-                  child: _isLoading
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Registrar y Agregar',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        )
-                      : const Text('Registrar y Agregar'),
+                  ),
                 ),
               ],
             ),

@@ -5,7 +5,8 @@ from decimal import Decimal
 import csv
 import io
 from openpyxl import load_workbook
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from uuid import UUID
 
 from app.core.database import get_db
 from app.api.deps import get_current_user
@@ -16,7 +17,8 @@ from app.models.models import (
 from app.schemas.inventory import (
     ProductCreate, ProductResponse, ProductUpdate, 
     CategoryCreate, CategoryResponse, ComboCreate, ComboResponse,
-    InventoryResponse, InventoryReserve, InventoryRelease
+    InventoryResponse, InventoryReserve, InventoryRelease,
+    WarehouseResponse, InventoryAdjustRequest, InventoryTransferRequest, InventoryLoadRequest
 )
 
 router = APIRouter()
@@ -442,3 +444,237 @@ async def create_combo(
         created_at=new_combo.created_at,
         items=[ComboItemResponse(product_id=i.product_id, quantity=i.quantity) for i in items_list]
     )
+
+
+# --- Actualización de Productos ---
+@router.put("/products/{product_id}", response_model=ProductResponse)
+async def update_product(
+    product_id: UUID,
+    payload: ProductUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    prod_query = await db.execute(select(Product).where(Product.id == product_id))
+    product = prod_query.scalars().first()
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado")
+
+    if payload.name is not None:
+        product.name = payload.name
+    if payload.barcode is not None:
+        product.barcode = payload.barcode
+    if payload.category_id is not None:
+        product.category_id = payload.category_id
+    if payload.description is not None:
+        product.description = payload.description
+    if payload.cost_usd is not None:
+        product.cost_usd = payload.cost_usd
+    if payload.price_usd is not None:
+        product.price_usd = payload.price_usd
+    if payload.price_ves_manual is not None:
+        product.price_ves_manual = payload.price_ves_manual
+    if payload.is_active is not None:
+        product.is_active = payload.is_active
+
+    await db.commit()
+    await db.refresh(product)
+
+    rate = await _get_tenant_exchange_rate(db, current_user.tenant_id)
+    calculated_ves = _calculate_ves_price(product.price_usd, product.price_ves_manual, rate)
+
+    return ProductResponse(
+        id=product.id,
+        tenant_id=product.tenant_id,
+        category_id=product.category_id,
+        barcode=product.barcode,
+        name=product.name,
+        description=product.description,
+        cost_usd=product.cost_usd,
+        price_usd=product.price_usd,
+        price_ves_manual=product.price_ves_manual,
+        price_ves_calculated=calculated_ves,
+        is_active=product.is_active,
+        created_at=product.created_at,
+        updated_at=product.updated_at
+    )
+
+
+# --- Almacenes ---
+@router.get("/warehouses", response_model=List[WarehouseResponse])
+async def list_warehouses(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(select(Warehouse).where(Warehouse.is_active == True))
+    warehouses = result.scalars().all()
+    if not warehouses:
+        wh = Warehouse(tenant_id=current_user.tenant_id, name="Almacén Principal", is_active=True)
+        db.add(wh)
+        await db.commit()
+        await db.refresh(wh)
+        return [wh]
+    return warehouses
+
+
+# --- Operaciones de Inventario ---
+@router.post("/adjust")
+async def adjust_stock(
+    payload: InventoryAdjustRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if payload.warehouse_id:
+        wh_res = await db.execute(select(Warehouse).where(Warehouse.id == payload.warehouse_id))
+        warehouse = wh_res.scalars().first()
+    else:
+        wh_res = await db.execute(select(Warehouse).where(Warehouse.name == "Almacén Principal"))
+        warehouse = wh_res.scalars().first()
+        if not warehouse:
+            wh_res = await db.execute(select(Warehouse).where(Warehouse.is_active == True))
+            warehouse = wh_res.scalars().first()
+
+    if not warehouse:
+        raise HTTPException(status_code=404, detail="Almacén no encontrado")
+
+    inv_res = await db.execute(
+        select(Inventory).where(
+            Inventory.product_id == payload.product_id,
+            Inventory.warehouse_id == warehouse.id
+        )
+    )
+    inventory = inv_res.scalars().first()
+    if not inventory:
+        inventory = Inventory(
+            tenant_id=current_user.tenant_id,
+            product_id=payload.product_id,
+            warehouse_id=warehouse.id,
+            stock_available=Decimal("0.00"),
+            stock_reserved=Decimal("0.00")
+        )
+        db.add(inventory)
+
+    inventory.stock_available += payload.quantity_change
+    if inventory.stock_available < 0:
+        inventory.stock_available = Decimal("0.00")
+
+    movement = InventoryMovement(
+        tenant_id=current_user.tenant_id,
+        product_id=payload.product_id,
+        warehouse_id=warehouse.id,
+        quantity=abs(payload.quantity_change),
+        type="ENTRADA" if payload.quantity_change >= 0 else "SALIDA",
+        notes=payload.reason
+    )
+    db.add(movement)
+    await db.commit()
+    return {"message": "Ajuste aplicado exitosamente", "stock_available": inventory.stock_available}
+
+
+@router.post("/transfer")
+async def transfer_stock(
+    payload: InventoryTransferRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if payload.origin_warehouse_id == payload.target_warehouse_id:
+        raise HTTPException(status_code=400, detail="El almacén de origen y destino deben ser diferentes")
+
+    orig_res = await db.execute(
+        select(Inventory).where(
+            Inventory.product_id == payload.product_id,
+            Inventory.warehouse_id == payload.origin_warehouse_id
+        )
+    )
+    orig_inv = orig_res.scalars().first()
+    if not orig_inv or orig_inv.stock_available < payload.quantity:
+        raise HTTPException(status_code=400, detail="Existencias insuficientes en el almacén de origen")
+
+    dest_res = await db.execute(
+        select(Inventory).where(
+            Inventory.product_id == payload.product_id,
+            Inventory.warehouse_id == payload.target_warehouse_id
+        )
+    )
+    dest_inv = dest_res.scalars().first()
+    if not dest_inv:
+        dest_inv = Inventory(
+            tenant_id=current_user.tenant_id,
+            product_id=payload.product_id,
+            warehouse_id=payload.target_warehouse_id,
+            stock_available=Decimal("0.00"),
+            stock_reserved=Decimal("0.00")
+        )
+        db.add(dest_inv)
+
+    orig_inv.stock_available -= payload.quantity
+    dest_inv.stock_available += payload.quantity
+
+    mov_out = InventoryMovement(
+        tenant_id=current_user.tenant_id,
+        product_id=payload.product_id,
+        warehouse_id=payload.origin_warehouse_id,
+        quantity=payload.quantity,
+        type="SALIDA",
+        notes=f"Traslado hacia almacén {payload.target_warehouse_id}: {payload.notes or ''}"
+    )
+    mov_in = InventoryMovement(
+        tenant_id=current_user.tenant_id,
+        product_id=payload.product_id,
+        warehouse_id=payload.target_warehouse_id,
+        quantity=payload.quantity,
+        type="ENTRADA",
+        notes=f"Traslado desde almacén {payload.origin_warehouse_id}: {payload.notes or ''}"
+    )
+    db.add_all([mov_out, mov_in])
+    await db.commit()
+    return {"message": "Traslado completado exitosamente"}
+
+
+@router.post("/load")
+async def load_inventory(
+    payload: InventoryLoadRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if payload.warehouse_id:
+        wh_res = await db.execute(select(Warehouse).where(Warehouse.id == payload.warehouse_id))
+        warehouse = wh_res.scalars().first()
+    else:
+        wh_res = await db.execute(select(Warehouse).where(Warehouse.is_active == True))
+        warehouse = wh_res.scalars().first()
+
+    if not warehouse:
+        raise HTTPException(status_code=404, detail="Almacén no encontrado")
+
+    for item in payload.items:
+        inv_res = await db.execute(
+            select(Inventory).where(
+                Inventory.product_id == item.product_id,
+                Inventory.warehouse_id == warehouse.id
+            )
+        )
+        inventory = inv_res.scalars().first()
+        if not inventory:
+            inventory = Inventory(
+                tenant_id=current_user.tenant_id,
+                product_id=item.product_id,
+                warehouse_id=warehouse.id,
+                stock_available=Decimal("0.00"),
+                stock_reserved=Decimal("0.00")
+            )
+            db.add(inventory)
+
+        inventory.stock_available += item.quantity
+
+        movement = InventoryMovement(
+            tenant_id=current_user.tenant_id,
+            product_id=item.product_id,
+            warehouse_id=warehouse.id,
+            quantity=item.quantity,
+            type="ENTRADA",
+            notes=f"Carga por {payload.document_type} {payload.document_number or ''} - Proveedor: {payload.supplier_name or 'N/A'}"
+        )
+        db.add(movement)
+
+    await db.commit()
+    return {"message": f"Carga de {len(payload.items)} productos completada exitosamente"}

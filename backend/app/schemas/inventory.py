@@ -114,3 +114,45 @@ class ComboResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# --- Almacenes y Operaciones de Inventario ---
+class WarehouseResponse(BaseModel):
+    id: UUID
+    tenant_id: UUID
+    name: str
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class InventoryAdjustRequest(BaseModel):
+    product_id: UUID
+    warehouse_id: Optional[UUID] = None
+    quantity_change: Decimal
+    reason: str = "Ajuste manual"
+
+
+class InventoryTransferRequest(BaseModel):
+    product_id: UUID
+    origin_warehouse_id: UUID
+    target_warehouse_id: UUID
+    quantity: Decimal = Field(..., gt=0)
+    notes: Optional[str] = "Traslado entre almacenes"
+
+
+class InventoryLoadItem(BaseModel):
+    product_id: UUID
+    quantity: Decimal = Field(..., gt=0)
+    cost_usd: Optional[Decimal] = None
+
+
+class InventoryLoadRequest(BaseModel):
+    document_type: str = "NOTA_ENTREGA"  # NOTA_ENTREGA, FACTURA, MANUAL
+    document_number: Optional[str] = None
+    supplier_name: Optional[str] = None
+    warehouse_id: Optional[UUID] = None
+    items: List[InventoryLoadItem]
+    notes: Optional[str] = None
