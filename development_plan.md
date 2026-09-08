@@ -1,179 +1,59 @@
-# Plan de Acción y Lista de Tareas: Nexus v3.0
+# Plan de Trabajo y Cronograma MVP: Nexus v3.0 (16 Días)
+## Gestión Comercial Modular - Minorista México
+### Especificación con Trazabilidad Constitucional, Historias de Usuario y Anclas Anti-Alucinación
 
-Este documento establece el plan de desarrollo, los criterios de aceptación detallados por requerimiento, la arquitectura de pruebas unitarias/integración, el ciclo de validación estricto, y la guía de integración con el servidor MCP de **Google Stitch** para la construcción de interfaces.
-
----
-
-## 🔁 1. Ciclo de Validación Estricto (Flujo de Trabajo)
-
-Para asegurar la calidad y consistencia ACID exigida por la Constitución (Art. I, Principio 2), ningún requerimiento o módulo de negocio puede ser considerado **APROBADO** o **COMPLETO** sin superar el siguiente ciclo de validación:
-
-```mermaid
-stateDiagram-v2
-    [*] --> PENDIENTE
-    PENDIENTE --> EN_DESARROLLO : Iniciar programación
-    EN_DESARROLLO --> PRUEBAS_AUTOMATIZADAS : Código listo
-    PRUEBAS_AUTOMATIZADAS --> VALIDACION_MANUAL : Pasa Unit & Integration Tests (100%)
-    PRUEBAS_AUTOMATIZADAS --> EN_DESARROLLO : Fallan tests (Bugs)
-    VALIDACION_MANUAL --> APROBADO : Pasa Criterios de Aceptación (CA) y revisión de UI (Stitch)
-    VALIDACION_MANUAL --> EN_DESARROLLO : Falla CA o diseño descuadrado
-    APROBADO --> [*]
-```
-
-### Reglas de Transición
-1. **Paso a Pruebas Automatizadas:** El código del backend y frontend debe compilar sin advertencias y tener implementadas sus respectivas suites de prueba.
-2. **Paso a Validación Manual:** La cobertura de pruebas automatizadas en lógica de negocio crítica (comisiones, stock, arqueo, RLS) debe ser de **mínimo 80%**.
-3. **Paso a Aprobado:** Requiere la firma/aprobación de los fundadores (Alan y Eduardo) validando que se cumplen el 100% de los Criterios de Aceptación (CA) y que el diseño coincide con los bocetos de Google Stitch.
+> **Duración Total:** 16 Días Laborales (6 Horas / Día por Desarrollador)  
+> **Capacidad del Equipo:** Alan (96 Horas) + Eduardo (96 Horas) = 192 Horas Totales  
+> **Flujo de Trabajo:** Asistido Agéntico (Spec-Driven + Clean Architecture)  
+> **Trazabilidad Obligatoria:** Cada tarea y subtarea está vinculada a una sección y regla inquebrantable exacta de la **Constitución de Nexus** y del **Documento Maestro** para erradicar cualquier caso de alucinación o desviación por parte de agentes de IA.
 
 ---
 
-## 🧪 2. Arquitectura de Pruebas Obligatoria
+## 🔗 Fuentes de Verdad / Anclas Documentales
 
-### Backend (Python + FastAPI)
-- **Framework:** `pytest` con `pytest-asyncio` para pruebas asíncronas.
-- **Base de Datos de Pruebas:** Se utilizará una base de datos PostgreSQL de prueba aislada (limpiada en cada `fixture`).
-- **Pruebas Unitarias:** Lógica de redondeo bimoneda, expiración de TTL de stock reservado y cálculo de comisiones.
-- **Pruebas de Integración:**
-  - Validación del middleware de morosidad (simulación de respuesta 403 en Soft/Hard Lock).
-  - **Prueba de Aislamiento RLS:** Autenticar dos clientes diferentes y validar que el Tenant A no puede leer ni modificar ningún registro del Tenant B (retornando conjunto vacío o error).
-
-### Frontend (Flutter + Riverpod)
-- **Framework:** `flutter_test` y `integration_test`.
-- **Pruebas Unitarias/Widget:**
-  - Cambio de moneda global (Toggle USD/VES) en cabecera y traducción de valores usando la tasa del día.
-  - Comportamiento del formulario de login y almacenamiento en Hive.
-- **Pruebas de Integración:** Mockear el cliente HTTP `Dio` para simular respuestas del backend, validando la redirección al Login tras un error de expiración de token o un Hard Lock.
+* **Constitución:** [Constitucion Nexus v1-0.md](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md)
+* **Documento Maestro (SDD):** [Documento Maestro Nexus v3-0.md](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md)
 
 ---
 
-## 🎨 3. Guía de Integración con Google Stitch (MCP)
+## 🎯 Matriz de Cobertura, Historias de Usuario y Trazabilidad
 
-El servidor MCP de **Google Stitch** (`@_davideast/stitch-mcp`) expone bocetos, esquemas visuales y componentes UI listos para codificar. 
-
-### Configuración del Servidor
-El archivo de configuración de tu IDE `C:\Users\aland\.gemini\antigravity-ide\mcp_config.json` declara:
-- **Server Name:** `stitch`
-- **Command:** `npx -y @_davideast/stitch-mcp proxy`
-- **Autenticación:** Inyectada mediante `STITCH_API_KEY`.
-
-### Workflow con Stitch MCP para el Frontend:
-Cuando el IDE o el agente tenga activo el servidor `stitch`, utilizaremos las siguientes herramientas de MCP para construir las pantallas de Flutter:
-1. **`get_screen_image`:** Descargar el mockup visual de una pantalla (ej. Checkout, Cierre de Caja, Onboarding) para mapear espaciados, colores y tipografía HSL.
-2. **`get_screen_code`:** Obtener la estructura HTML/CSS sugerida por Stitch para traducirla de forma exacta a widgets de Flutter.
-3. **`build_site` / `doctor`:** Validar que la compilación visual local y la salud de la conexión de diseño estén alineadas con el Figma/Stitch Canvas original.
-
-> [!TIP]
-> En cada tarea de frontend detallada abajo, indicamos qué herramienta de Stitch MCP consultar para obtener el diseño de referencia.
-
----
-
-## 📋 4. Lista de Tareas y Criterios de Aceptación (Roadmap)
-
-### Módulo 1: Inventario y Abastecimiento (Core)
-
-#### [x] Tarea 1.1: Carga Inicial Masiva (RF-01)
-- **Descripción:** Desarrollar un script o endpoint en el backend para normalizar e insertar datos desde Excel.
-- **Criterios de Aceptación:**
-  - El sistema debe aceptar un archivo `.xlsx` o `.csv` con columnas: nombre, código de barras (opcional), costo_usd, precio_usd, stock_inicial.
-  - El backend debe validar que no existan códigos de barra duplicados dentro del mismo tenant.
-  - Se debe registrar automáticamente un movimiento de inventario del tipo `ENTRADA` por cada producto cargado.
-- **Pruebas Requeridas:**
-  - *Integración (Backend):* Enviar un archivo Excel de prueba mediante POST y verificar que los productos se inserten correctamente y se filtre el tenant apropiado.
-
-#### [x] Tarea 1.2: Manejo Bimoneda Nativo en Inventario (RF-02)
-- **Descripción:** Registro de costos/precios en USD y cálculo en VES en tiempo real.
-- **Criterios de Aceptación:**
-  - Cada producto almacena `cost_usd`, `price_usd` y `price_ves_manual` (opcional).
-  - Al consultar el inventario, si `price_ves_manual` es nulo, el sistema calcula automáticamente `price_usd * tasa_del_dia`.
-- **Pruebas Requeridas:**
-  - *Unitaria (Backend):* Validar la función de cálculo de precios con tasas decimales flotantes.
-
-#### [x] Tarea 1.3: Combos y Promociones (RF-03)
-- **Descripción:** Agrupación de productos con precio único y descuento proporcional de stock.
-- **Criterios de Aceptación:**
-  - Al vender un Combo, el sistema debe verificar que haya stock disponible de todos los componentes individuales en el almacén especificado.
-  - Al confirmarse la venta, se descuenta la cantidad correspondiente del inventario de cada artículo individual.
-- **Pruebas Requeridas:**
-  - *Unitaria (Backend):* Intentar vender un combo donde un artículo no tiene suficiente stock; debe fallar con excepción `INSUFFICIENT_STOCK`.
-
-#### [x] Tarea 1.4: Stock Reservado con TTL (RF-06)
-- **Descripción:** Liberar automáticamente el stock reservado en compras no cobradas tras 15 minutos.
-- **Criterios de Aceptación:**
-  - Las ventas en estado `PENDING_PAYMENT` mueven las cantidades de `stock_available` a `stock_reserved`.
-  - Un cron job/worker debe ejecutarse cada minuto y anular las ventas en este estado cuya fecha de creación supere los 15 minutos, devolviendo las cantidades a `stock_available`.
-- **Pruebas Requeridas:**
-  - *Unitaria (Backend):* Simular una venta creada hace 16 minutos y verificar que el script de limpieza libere el stock correctamente.
+| Día | Responsable | Tarea | Historia de Usuario | Referencia Constitucional & SDD | Contexto y Objetivo Central |
+|---|---|---|---|---|---|
+| **D1** | **Alan (6h)** | Core Backend & RLS | `HU-01 / CU-01` | [Const. Art. I (1.2.3), Art. II (2.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#22-arquitectura-multi-tenant) \| [Doc. Maestro Sec. 2.2, 7.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#22-arquitectura-multi-tenant) | Aislamiento nativo de PostgreSQL RLS para garantizar 0% fuga de datos entre comercios. |
+| **D1** | **Eduardo (6h)** | Flutter Shell & Login | `HU-02 / CU-02` | [Const. Art. I (1.2.5), Art. II (2.1)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#21-stack-tecnologico-obligatorio) \| [Doc. Maestro Sec. 1.2, 2.1, 6](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#21-stack-tecnologico) | Tema visual corporativo oscuro, cliente HTTP Dio con AuthInterceptor y login persistente. |
+| **D2** | **Alan (6h)** | RBAC & Middleware | `HU-03 / CU-03` | [Const. Art. VI (6.3)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#63-ciclo-de-vida-y-maquina-de-estados-de-suscripcion) \| [Doc. Maestro Sec. 3, 9.2](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#92-matriz-de-permisos-rbac-granular) | Permisos granulares de empleados y middleware de bloqueo por morosidad (Soft/Hard Lock). |
+| **D2** | **Eduardo (6h)** | Onboarding Gamificado | `HU-04 / CU-04` | [Const. Art. I (1.2.9), Art. VII (7.6)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#76-gamificacion-del-onboarding-y-setup-asistido) \| [Doc. Maestro Sec. 6 (SR-01)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#6-sub-requisitos-ux-y-setup-sin-fricción) | Barra de progreso visual, hitos iniciales y recompensa (1 mes gratis) contra el abandono inicial. |
+| **D3** | **Alan (6h)** | Backend Inventario MXN | `HU-05 / CU-05` | [Const. Art. I (1.2.4), Art. VII (7.3)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#73-registro-minimalista-de-3-campos-y-lazy-loading-en-punto-de-venta) \| [Doc. Maestro Sec. 5.1 (RF-02), Sec. 6 (SR-08), Sec. 7.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#51-módulo-de-inventario-y-abastecimiento-core) | Registro rápido en Pesos Mexicanos con SKU autogenerado y búsqueda fuzzy por trigramas. |
+| **D3** | **Eduardo (6h)** | UI Inventario & Detalle | `HU-05 / CU-06` | [Const. Art. I (1.2.8)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#12-principios-fundamentales-inquebrantables) \| [Doc. Maestro Sec. 5.1 (RF-02), Sec. 6 (SR-02, SR-08)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#6-sub-requisitos-ux-y-setup-sin-fricción) | Lista con buscador por cámara, filtros y ficha de detalle con desglose de margen % y stock. |
+| **D4** | **Alan (6h)** | Combos & Kardex | `HU-07, 08 / CU-07` | [Const. Art. I (1.2.2), Art. VII (7.1)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#71-inventario-y-control-de-stock) \| [Doc. Maestro Sec. 5.1 (RF-03, 06), Sec. 7.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#51-módulo-de-inventario-y-abastecimiento-core) | Validación atómica de combos, cron job de liberación de reservas en 15m y Kardex histórico. |
+| **D4** | **Eduardo (6h)** | Modales de Almacén | `HU-06 / CU-08` | [Const. Art. VII (7.1)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#71-inventario-y-control-de-stock) \| [Doc. Maestro Sec. 5.1 (RF-05, RF-07)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#51-módulo-de-inventario-y-abastecimiento-core) | Cuadrícula de 4 acciones: Ajuste físico, traslados entre bodegas e impresión de etiquetas. |
+| **D5** | **Alan (6h)** | Importador & Catálogo EAN | `HU-09 / CU-09` | [Const. Art. VII (7.5 Tier 1)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#75-motor-hibrido-de-catalogo-semilla-y-red-comunitaria-two-tier-engine) \| [Doc. Maestro Sec. 5.1 (RF-01), Sec. 5.7 (RF-29)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#57-módulos-de-setup-asistido-y-red-comunitaria-nuevos-requisitos-indispensables) | Parser de Excel con mapeo dinámico y Catálogo Semilla de Top 1,000 abarrotes de México. |
+| **D5** | **Eduardo (6h)** | Modo Góndola en Ráfaga | `HU-10 / CU-10` | [Const. Art. II (2.5), Art. VII (7.8)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#78-escaneo-continuo-y-clonacion-entre-sucursales) \| [Doc. Maestro Sec. 5.1 (RF-01), Sec. 5.7 (RF-30)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#57-módulos-de-setup-asistido-y-red-comunitaria-nuevos-requisitos-indispensables) | Escáner continuo para anaqueles que permite digitalizar 100 artículos en 15 minutos. |
+| **D6** | **Alan (6h)** | Checkout POS Atómico | `HU-11, 12 / CU-11` | [Const. Art. I (1.2.2), Art. VII (7.3)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#73-registro-minimalista-de-3-campos-y-lazy-loading-en-punto-de-venta) \| [Doc. Maestro Sec. 5.2 (RF-09, 12), Sec. 7.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#52-módulo-de-ventas-y-comisiones-core) | Endpoint transaccional con congelamiento de costos y alta Just-in-Time de productos al vuelo. |
+| **D6** | **Eduardo (6h)** | Terminal de Venta POS | `HU-11, 12 / CU-12` | [Const. Art. I (1.2.8), Art. VII (7.3)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#73-registro-minimalista-de-3-campos-y-lazy-loading-en-punto-de-venta) \| [Doc. Maestro Sec. 2.4, 5.2 (RF-09), Sec. 6 (SR-04)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#6-sub-requisitos-ux-y-setup-sin-fricción) | Carrito rápido, escáner permanente y modal para agregar productos al vuelo sin detener la fila. |
+| **D7** | **Alan (6h)** | Pagos Mixtos Backend | `HU-13 / CU-13` | [Const. Art. III (3.1, 3.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#articulo-iii-separacion-de-responsabilidades-financieras) \| [Doc. Maestro Sec. 4, 5.2 (RF-13, RF-14)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#52-módulo-de-ventas-y-comisiones-core) | Tabla `sale_payments` con soporte de Efectivo MXN, SPEI, CoDi y TPV Clip/Mercado Pago. |
+| **D7** | **Eduardo (6h)** | Calculadora Vuelto MXN | `HU-13 / CU-14` | [Const. Art. VII (7.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#72-ventas-caja-y-denominaciones-de-banxico) \| [Doc. Maestro Sec. 5.2 (RF-14), Sec. 6 (SR-04)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#6-sub-requisitos-ux-y-setup-sin-fricción) | Modal de cobro con botones rápidos de billetes ($50, $100, $200, $500 MXN) y cambio exacto. |
+| **D8** | **Alan (6h)** | Notas de Venta & Comisiones | `HU-14 / CU-15` | [Const. Art. VIII (8.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#82-lo-que-el-sistema-no-debe-hacer-prohibiciones-inquebrantables) \| [Doc. Maestro Sec. 1.2, 5.2 (RF-08, RF-10)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#52-módulo-de-ventas-y-comisiones-core) | Generador de notas de venta con folio consecutivo y cálculo automático de comisiones de venta. |
+| **D8** | **Eduardo (6h)** | Ticket Térmico & Rendimiento | `HU-14 / CU-16` | [Const. Art. VIII (8.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#82-lo-que-el-sistema-no-debe-hacer-prohibiciones-inquebrantables) \| [Doc. Maestro Sec. 5.2 (RF-08), Sec. 6 (SR-05)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#6-sub-requisitos-ux-y-setup-sin-fricción) | Formato de ticket 58/80mm, compartir recibo a WhatsApp y tablero visual de comisiones. |
+| **D9** | **Alan (6h)** | Sesiones Caja & Banxico | `HU-15 / CU-17` | [Const. Art. VII (7.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#72-ventas-caja-y-denominaciones-de-banxico) \| [Doc. Maestro Sec. 5.4 (RF-18), Sec. 7.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#71-script-ddl-de-migración-a-pesos-mexicanos-y-red-comunitaria-postgresql) | Modelado de turnos y tabla `cash_session_denominations` con cono oficial de Banxico. |
+| **D9** | **Eduardo (6h)** | Wizard Cierre de Caja | `HU-15 / CU-18` | [Const. Art. VII (7.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#72-ventas-caja-y-denominaciones-de-banxico) \| [Doc. Maestro Sec. 5.4 (RF-19), Sec. 6 (SR-07)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#6-sub-requisitos-ux-y-setup-sin-fricción) | Asistente interactivo paso a paso con ilustraciones de billetes ($20-$1000) y monedas ($0.50-$20). |
+| **D10** | **Alan (6h)** | Conciliación & Descuadres | `HU-16 / CU-19` | [Const. Art. I (1.2.2), Art. VII (7.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#72-ventas-caja-y-denominaciones-de-banxico) \| [Doc. Maestro Sec. 5.4 (RF-18)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#54-módulo-de-caja-y-tesorería-plan-comercio) | Detección de faltantes/sobrantes, registro de caja menor y generación de corte Z. |
+| **D10** | **Eduardo (6h)** | Reporte Cuadre de Caja | `HU-16 / CU-20` | [Const. Art. VII (7.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#72-ventas-caja-y-denominaciones-de-banxico) \| [Doc. Maestro Sec. 5.4 (RF-18, RF-19)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#54-módulo-de-caja-y-tesorería-plan-comercio) | Pantalla con semáforo de cuadre de turno, caja chica e impresión de corte Z para archivo. |
+| **D11** | **Alan (6h)** | Compras & Cuentas x Pagar | `HU-17 / CU-21` | [Const. Art. I (1.2.4)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#12-principios-fundamentales-inquebrantables) \| [Doc. Maestro Sec. 5.3 (RF-15, RF-16), Sec. 7.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#53-módulo-de-compras-y-proveedores-core) | Recepción de mercancía con entrada automática al inventario y control de créditos en MXN. |
+| **D11** | **Eduardo (6h)** | Directorio de Proveedores | `HU-17 / CU-22` | [Const. Art. I (1.2.8)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#12-principios-fundamentales-inquebrantables) \| [Doc. Maestro Sec. 5.3 (RF-15 a 17)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#53-módulo-de-compras-y-proveedores-core) | Directorio de distribuidores con acceso telefónico y tablero de facturas con semáforo. |
+| **D12** | **Alan (6h)** | Parser Facturas Heurístico | `HU-18 / CU-23` | [Const. Art. IV (4.2), Art. VII (7.7)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#77-ocr-on-device-y-dictado-de-voz-nativo) \| [Doc. Maestro Sec. 5.7 (RF-28)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#57-módulos-de-setup-asistido-y-red-comunitaria-nuevos-requisitos-indispensables) | Algoritmo que estructura texto de facturas físicas de distribuidores (Bimbo, Coca-Cola). |
+| **D12** | **Eduardo (6h)** | OCR On-Device & Voz | `HU-18, 19 / CU-24` | [Const. Art. II (2.1), Art. VII (7.7)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#21-stack-tecnologico-obligatorio) \| [Doc. Maestro Sec. 2.1, 5.7 (RF-28), Sec. 6 (SR-09)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#6-sub-requisitos-ux-y-setup-sin-fricción) | Google ML Kit Text Recognition local en celular ($0 costo) y dictado de voz nativo. |
+| **D13** | **Alan (6h)** | Catálogo Web WhatsApp | `HU-20 / CU-25` | [Const. Art. VII (7.4)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#74-catalogo-digital-whatsapp) \| [Doc. Maestro Sec. 5.6 (RF-23, RF-24, RF-26)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#56-módulo-de-catálogo-digital-whatsapp-plan-comercio) | Endpoints optimizados con OpenGraph SSR y formateador de pedidos para WhatsApp. |
+| **D13** | **Eduardo (6h)** | Vitrina Web para Clientes | `HU-20 / CU-26` | [Const. Art. VII (7.4)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#74-catalogo-digital-whatsapp) \| [Doc. Maestro Sec. 5.6 (RF-24, RF-25, RF-27)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#56-módulo-de-catálogo-digital-whatsapp-plan-comercio) | Interfaz pública web móvil con carrito y botón prominente de "Pedir por WhatsApp". |
+| **D14** | **Alan (6h)** | Webhooks SPEI & OXXO Pay | `HU-21 / CU-27` | [Const. Art. III (3.2), Art. V (5.2), Art. VI (6.1)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#61-estructura-de-planes-en-pesos-mexicanos-mxn) \| [Doc. Maestro Sec. 3, Sec. 4.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#41-panel-de-administración-interno-para-fundadores) | Conciliación automatizada de suscripciones por transferencias CLABE y pagos en OXXO. |
+| **D14** | **Eduardo (6h)** | Panel de Fundadores | `HU-22 / CU-28` | [Const. Art. V (5.3), Art. VI (6.3)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#53-panel-de-administracion-interno-para-fundadores) \| [Doc. Maestro Sec. 3, Sec. 4.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#41-panel-de-administración-interno-para-fundadores) | Pantalla de pago de suscripciones y panel administrativo exclusivo para Alan y Eduardo. |
+| **D15** | **Alan (6h)** | Red Comunitaria & Consenso | `HU-23, 24 / CU-29` | [Const. Art. VII (7.5 Tier 2, 7.8), Art. VIII (8.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#75-motor-hibrido-de-catalogo-semilla-y-red-comunitaria-two-tier-engine) \| [Doc. Maestro Sec. 2.4, 5.7 (RF-29, 31), Sec. 7.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#57-módulos-de-setup-asistido-y-red-comunitaria-nuevos-requisitos-indispensables) | Algoritmo que promueve sugerencias de catálogo al coincidir $\ge 3$ comercios y clonación. |
+| **D15** | **Eduardo (6h)** | Sugerencias POS & Analítica | `HU-23 / CU-30` | [Const. Art. I (1.2.3), Art. VII (7.5)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#75-motor-hibrido-de-catalogo-semilla-y-red-comunitaria-two-tier-engine) \| [Doc. Maestro Sec. 5.5 (RF-20, 21), Sec. 6 (SR-02)](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#55-módulo-de-analítica-avanzada-plan-corporativo) | Badge de sugerencia comunitaria en ventas, clonación y gráficos de utilidad neta en MXN. |
+| **D16** | **Alan (6h)** | Hardening & Deploy VPS | `HU-25 / CU-31` | [Const. Art. I (1.2.3), Art. IV (4.1, 4.2)](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#articulo-iv-restricciones-presupuestarias-bootstrap) \| [Doc. Maestro Sec. 8.1, 8.3, 9.1](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#81-presupuesto-mensual-inicial) | Auditoría final de RLS, backups diarios automáticos a Cloudflare R2 y despliegue en VPS. |
+| **D16** | **Eduardo (6h)** | Pruebas Reales & Release | `HU-25 / CU-32` | [Const. Art. I (1.2.5, 1.2.6), Anexo B](file:///d:/aland/Documents/Proyectos/Nexus/Constitucion%20Nexus%20v1-0.md#anexo-b-checklist-para-nuevas-funcionalidades) \| [Doc. Maestro Sec. 10, 11](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#10-hoja-de-ruta-e-implementación-técnica) | Pruebas de humo en smartphones Android reales de gama baja y salida a producción con 3 tiendas. |
 
 ---
 
-### Módulo 2: Ventas y Comisiones (Core)
-
-#### [x] Tarea 2.1: Máquina de Estados de Venta (RF-12)
-- **Descripción:** Control rígido de transiciones de ventas.
-- **Criterios de Aceptación:**
-  - Los estados permitidos son: `DRAFT` $\rightarrow$ `PENDING_PAYMENT` $\rightarrow$ `PAID` $\rightarrow$ `COMPLETED`.
-  - Se permiten las transiciones a `CANCELLED` desde `DRAFT` o `PENDING_PAYMENT`.
-  - Se permite `REFUNDED` únicamente después de `PAID` o `COMPLETED`.
-- **Pruebas Requeridas:**
-  - *Unitaria (Backend):* Testear transiciones inválidas (ej. de `DRAFT` directo a `COMPLETED`) y asegurar que lancen `ValidationError`.
-
-#### [x] Tarea 2.2: Checkout Rápido e Interfaz Móvil (SR-04 & RF-14)
-- **Descripción:** Pantalla de ventas en el frontend con escáner e ingreso de pagos mixtos.
-- **Criterios de Aceptación:**
-  - La interfaz de checkout debe permitir leer códigos de barras de forma continua usando la cámara trasera (dependencia `mobile_scanner`).
-  - Al presionar cobrar, debe permitir ingresar múltiples métodos de pago (ej: $10 USD en efectivo y Bs. 200 en Pago Móvil) y calcular el vuelto exacto en la moneda seleccionada.
-- **Diseño de Referencia:** Consultar Stitch MCP (`get_screen_image` con ID de pantalla `checkout_flow`).
-
-#### [x] Tarea 2.3: Registro de Productos al Vuelo (RF-09 / RF-21)
-- **Descripción:** Modal rápido para crear productos durante la venta sin cancelar la operación.
-- **Criterios de Aceptación:**
-  - Si un producto escaneado no existe, debe desplegarse un modal no bloqueante.
-  - Campos mínimos: Nombre, precio_usd y stock_inicial.
-  - Al guardar, el producto se agrega a la base de datos en background y se inserta automáticamente al carrito del cajero en curso.
-- **Diseño de Referencia:** Consultar Stitch MCP (`get_screen_image` con ID de pantalla `quick_product_creation`).
-
-#### [x] Tarea 2.4: Cálculo de Comisiones Dinámicas (RF-10)
-- **Descripción:** Lógica contable para la retribución de vendedores.
-- **Criterios de Aceptación:**
-  - Permite configurar porcentajes de comisión por vendedor.
-  - La comisión se calcula al pasar la venta al estado `PAID`.
-- **Pruebas Requeridas:**
-  - *Unitaria (Backend):* Verificar el cálculo decimal de comisiones basándose en el margen de ganancia real (precio de venta - costo de compra congelado).
-
----
-
-### Módulo 3: Caja y Tesorería (Plan Comercio+)
-
-#### [ ] Tarea 3.1: Arqueo Multimoneda y Wizard de Cierre (RF-18 & RF-19)
-- **Descripción:** Flujo guiado de apertura y cierre de caja contando denominaciones.
-- **Criterios de Aceptación:**
-  - Al cerrar caja, el sistema solicita al usuario el conteo físico detallado por billete (USD y VES).
-  - El sistema calcula el balance teórico esperado (`expected_balance_usd/ves`) sumando el saldo inicial y las ventas registradas.
-  - Compara el saldo físico real contra el esperado y registra faltantes/sobrantes.
-- **Diseño de Referencia:** Consultar Stitch MCP (`get_screen_image` con ID de pantalla `cash_register_wizard`).
-- **Pruebas Requeridas:**
-  - *Integración (Backend):* Crear una sesión de caja, registrar 3 ventas con métodos de pago mixtos, cerrar la caja con valores físicos y validar que el arqueo registre la discrepancia correcta.
-
----
-
-### Módulo 4: Catálogo Digital WhatsApp (Plan Comercio+)
-
-#### [ ] Tarea 4.1: Catálogo Digital Público y Pedidos (RF-23 & RF-24)
-- **Descripción:** Enlace web público que genera un mensaje estructurado para WhatsApp.
-- **Criterios de Aceptación:**
-  - Generar ruta pública `/tienda/{slug_comercio}` renderizada con SSR para previsualizaciones rápidas de enlace.
-  - Permite agregar productos a un carrito público.
-  - Al presionar "Enviar Pedido", abre WhatsApp con un mensaje pre-formateado detallando productos, cantidades y total a pagar.
-- **Diseño de Referencia:** Consultar Stitch MCP (`get_screen_code` con ID de pantalla `whatsapp_catalog`).
-
----
-
-### Módulo 5: Administración SaaS (Fundadores)
-
-#### [ ] Tarea 5.1: Panel de Aprobaciones de Pago (RF-04 de SDD)
-- **Descripción:** Interfaz exclusiva para Alan y Eduardo para la aprobación manual de suscripciones de comercios.
-- **Criterios de Aceptación:**
-  - Pantalla para listar pagos de inquilinos en estado `PENDIENTE`.
-  - Muestra la captura de pantalla de transferencia adjunta.
-  - Al presionar `Aprobar`, cambia la factura a `PAGADA`, el estado del tenant a `ACTIVE` y envía correo de confirmación.
-- **Diseño de Referencia:** Consultar Stitch MCP (`get_screen_image` con ID de pantalla `saas_admin_dashboard`).
+> Documento maestro detallado con el desglose técnico de subtareas disponible en:  
+> 📄 [nexus_v3/docs/architecture/planificacion_trabajo_mvp_16dias.md](file:///d:/aland/Documents/Proyectos/Nexus/nexus_v3/docs/architecture/planificacion_trabajo_mvp_16dias.md)

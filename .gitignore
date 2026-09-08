@@ -1,13 +1,14 @@
 # Python/Virtual Environment
-backend/.venv/
-.venv/
-Include/
-Lib/
-Scripts/
-pyvenv.cfg
+/backend/.venv/
+/.venv/
+/Include/
+/Lib/
+/Scripts/
+/pyvenv.cfg
 __pycache__/
 *.pyc
-backend/.env
+/backend/.env
+/nexus_v3/
 
 # IDEs and Editors
 .idea/

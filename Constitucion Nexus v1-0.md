@@ -1,8 +1,8 @@
 # CONSTITUCIÓN DEL SISTEMA NEXUS
-## Gestión Comercial Modular para el Comercio Venezolano
+## Gestión Comercial Modular para el Comercio Minorista en México
 
-> **Versión:** 2.0  
-> **Última actualización:** Julio 2026  
+> **Versión:** 3.0-MX  
+> **Última actualización:** Septiembre 2026  
 > **Fundadores:** Alan y Eduardo  
 > **Propósito:** Este documento define los principios fundamentales, reglas inquebrantables y filosofía de diseño del Sistema Nexus. Cualquier cambio, funcionalidad o decisión técnica debe respetar estos principios.
 
@@ -10,7 +10,7 @@
 
 ## PREÁMBULO
 
-Nexus nace con una misión clara: **democratizar el acceso a herramientas profesionales de gestión comercial para los pequeños y medianos comercios venezolanos**, operando en un contexto de recursos limitados, mercado informal y realidad bimoneda.
+Nexus nace con una misión clara: **democratizar el acceso a herramientas profesionales de gestión comercial para los pequeños y medianos comercios en México** (tienditas de abarrotes, misceláneas, minisuper, tiendas de conveniencia y comercios independientes), operando en un contexto de recursos limitados, sector informal/RESICO y necesidad de adopción digital ágil y sin fricciones.
 
 Esta constitución es el documento "sagrado" del proyecto. Cuando haya duda sobre si una funcionalidad debe implementarse o no, se consulta este documento. Cuando alguien (un fundador, un futuro empleado, o una IA) proponga un cambio, debe justificarlo frente a estos principios.
 
@@ -19,22 +19,23 @@ Esta constitución es el documento "sagrado" del proyecto. Cuando haya duda sobr
 ## ARTÍCULO I: PROPÓSITO Y FILOSOFÍA
 
 ### 1.1 Misión del Sistema
-Nexus es un **Sistema de Gestión Comercial Modular** diseñado específicamente para el mercado retail venezolano, operando bajo un modelo **SaaS Multi-tenant**. Su propósito es ayudar al comerciante a:
-- Controlar su inventario de forma precisa
-- Vender más rápido y sin errores
-- Tomar decisiones basadas en datos reales
-- Digitalizar su negocio sin fricciones
+Nexus es un **Sistema de Gestión Comercial Modular** diseñado específicamente para el mercado retail minorista en México, operando bajo un modelo **SaaS Multi-tenant**. Su propósito es ayudar al comerciante a:
+- Controlar su inventario de forma precisa en tiempo real
+- Vender más rápido, reduciendo filas y errores en caja
+- Tomar decisiones comerciales basadas en datos reales y rentabilidad
+- Digitalizar su negocio y conectar con sus clientes vía WhatsApp sin fricciones técnicas
 
 ### 1.2 Principios Fundamentales (Inquebrantables)
 
-1. **Simplicidad sobre Complejidad:** Cada funcionalidad debe resolver un problema real del comerciante venezolano. No se implementa tecnología por moda.
-2. **Consistencia ACID sobre Velocidad:** En operaciones críticas (ventas, inventario), la consistencia de datos es innegociable. Preferimos un sistema lento pero correcto a uno rápido pero incorrecto.
-3. **Multi-tenant desde el Día 1:** Cada línea de código debe asumir que hay múltiples comercios compartiendo la misma infraestructura. El aislamiento de datos es sagrado.
-4. **Bimoneda Nativa:** USD y VES son ciudadanos de primera clase, no conversiones de último momento.
-5. **Mobile-First:** Diseñamos primero para celular (Android), porque es lo que la mayoría de nuestros clientes van a usar. La PC es secundaria.
-6. **Bootstrap (Crecimiento con Recursos Limitados):** Empezamos con lo mínimo, validamos el producto y crecemos reinvirtiendo las ganancias. No gastamos lo que no tenemos.
-7. **El Sistema NO es una Pasarela de Pagos:** Solo registra los pagos de las ventas del comercio, no los procesa ni valida.
-8. **Rapidez y Eficiencia para el Usuario:** El comerciante debe sentir que ahorra tiempo y trabajo manual. Esta es nuestra ventaja competitiva principal.
+1. **Simplicidad sobre Complejidad:** Cada funcionalidad debe resolver un problema real del comerciante minorista mexicano. No se implementa tecnología por moda ni se sobrecarga la experiencia del usuario.
+2. **Consistencia ACID sobre Velocidad:** En operaciones críticas (ventas, inventario, kardex), la consistencia de datos es innegociable. Preferimos un sistema riguroso y correcto a uno rápido pero inconsistente.
+3. **Multi-tenant desde el Día 1:** Cada línea de código debe asumir que hay múltiples comercios compartiendo la misma infraestructura. El aislamiento de datos mediante Row-Level Security (RLS) es sagrado.
+4. **Moneda Base Nativa MXN:** El Peso Mexicano (MXN) es el ciudadano de primera clase en todo el sistema. Costos, precios, arqueos y reportes operan nativamente en MXN. El Dólar Estadounidense (USD) se contempla como moneda secundaria opcional configurada únicamente para mercancía importada o comercios en la franja fronteriza norte.
+5. **Mobile-First:** Diseñamos primero para smartphone (Android), porque es el dispositivo principal de la mayoría de los pequeños comerciantes. La versión PC/Web (Flutter Web) es complementaria.
+6. **Bootstrap (Crecimiento con Recursos Limitados):** Empezamos con lo mínimo viable, validamos el producto en campo con comercios reales y crecemos reinvirtiendo las ganancias.
+7. **El Sistema NO es una Pasarela de Pagos en Punto de Venta:** Nexus actúa como un registro contable de las ventas y cobros del comercio; no procesa, no retiene ni valida automáticamente los fondos recibidos en mostrador.
+8. **Rapidez y Eficiencia para el Usuario:** El cajero y el dueño deben ahorrar tiempo y eliminar tareas manuales repetitivas. Esta es nuestra ventaja competitiva principal.
+9. **Cero Fricción en Setup e Inventario Orgánico (Just-in-Time):** Ningún comerciante debe ser forzado a inventariar todo su negocio antes de empezar a vender. El sistema debe permitir operar desde el minuto 1 y construir el catálogo de forma progresiva, asistida y sin sobrecostos en servidores.
 
 ---
 
@@ -45,41 +46,45 @@ Nexus es un **Sistema de Gestión Comercial Modular** diseñado específicamente
 | Capa | Tecnología | Justificación |
 |------|-----------|---------------|
 | **Backend/API** | Python + FastAPI | Alto rendimiento, asincronismo nativo, OpenAPI automático |
-| **Frontend** | Flutter (Dart) | Código único para Android, iOS y Web |
-| **Base de Datos** | PostgreSQL | RLS, consistencia ACID, consultas complejas |
-| **Manejo de Estado** | Riverpod o BLoC | Patrones modernos y escalables |
-| **Caché Local** | Hive / SharedPreferences | Solo lectura, sin sincronización bidireccional |
-| **Escáner de Código de Barras** | mobile_scanner (Flutter) | Usa la cámara del celular, gratuito, open source |
+| **Frontend** | Flutter (Dart) | Código único multiplataforma para Android, iOS y Web |
+| **Base de Datos** | PostgreSQL | RLS nativo, consistencia ACID, extensión `pg_trgm` para búsqueda fuzzy |
+| **Manejo de Estado** | Riverpod | Inmutabilidad, testabilidad y arquitectura reactiva moderna |
+| **Caché Local** | Hive / SharedPreferences | Solo lectura persistente, sin sincronización bidireccional compleja |
+| **Escáner de Código de Barras** | mobile_scanner (Flutter) | Uso de la cámara del celular, rápido, open-source |
+| **OCR y Visión On-Device** | Google ML Kit Text Recognition | Procesamiento 100% offline en el smartphone, sin costo de API en la nube |
 
 ### 2.2 Arquitectura Multi-tenant
 
-- **Modelo:** Single Database con columna `tenant_id` en cada tabla
-- **Seguridad:** Row-Level Security (RLS) de PostgreSQL obligatorio
-- **Contexto:** Cada request ejecuta `SET app.current_tenant = 'uuid'` antes de cualquier consulta
-- **Índices:** Todos los índices incluyen `tenant_id` como primera columna
-- **Escala objetivo inicial:** Hasta 100 comercios
+- **Modelo:** Base de datos compartida (*Single Database*) con columna `tenant_id` en todas las tablas del negocio.
+- **Seguridad:** Row-Level Security (RLS) de PostgreSQL obligatorio y estricto.
+- **Contexto:** Cada petición autenticada ejecuta `SET app.current_tenant = 'uuid'` antes de cualquier consulta.
+- **Índices:** Todos los índices relacionales incluyen `tenant_id` como primera columna.
+- **Escala objetivo inicial:** Hasta 100 comercios activos en Fase 1.
 
-### 2.3 Manejo Bimoneda y Tasa Histórica
+### 2.3 Manejo de Moneda Nativa MXN y Precios Históricos
 
 **Regla de Oro Contable:**
-- Los productos tienen `cost_usd` y `price_usd` como valores base
-- Al procesar una venta, el sistema consulta la tasa actual y **la congela** en el registro de la venta (`exchange_rate_applied`)
-- La tabla `sale_items` almacena `unit_cost_usd` congelado al momento de la venta
-- Los reportes de rentabilidad histórica usan estos valores congelados, garantizando auditoría contable perfecta
+- Los productos registran `cost_mxn` y `price_mxn` como valores base obligatorios.
+- Opcionalmente, se habilita `cost_usd_import` para artículos adquiridos en el extranjero.
+- El flujo estándar de venta opera 100% en Pesos Mexicanos (MXN) sin dependencia de APIs externas de tasas de cambio, garantizando máxima velocidad en el checkout.
+- La tabla `sale_items` almacena `unit_cost_mxn` congelado en el instante exacto de la venta.
+- En comercios fronterizos donde se habilite visualización bimoneda, el sistema consulta la tasa oficial de Banxico y congela `usd_mxn_exchange_rate_applied`.
+- Los reportes de rentabilidad histórica utilizan estos valores congelados, garantizando una auditoría contable exacta.
 
 ### 2.4 Conectividad y Sincronización
 
-- **Arquitectura de Escritura:** Exclusivamente Online (no hay sincronización bidireccional compleja)
-- **Modo Caché:** Solo lectura. Sin internet, el usuario puede consultar productos pero no crear ventas
-- **Interceptor de Red:** Si falla la conexión en escritura, la UI bloquea la acción y exige reconexión
-- **Justificación:** La ruptura de stock es un problema grave. Preferimos que el cajero espere 2 minutos a que vuelva el internet, a que el sistema venda productos que no existen.
+- **Arquitectura de Escritura:** Exclusivamente Online (garantía de stock unificado sin colisiones).
+- **Modo Caché Local:** Solo lectura. Si el comercio pierde conexión a internet, puede consultar productos y precios, pero la creación de ventas queda pausada.
+- **Interceptor de Red:** La interfaz notifica al usuario si la conexión falla durante una operación de escritura y solicita reconexión.
+- **Justificación:** La rotura de stock y la sobreventa física en tienda son problemas graves. Es preferible que el cajero reconecte su red a vender artículos agotados.
 
-### 2.5 Escaneo de Código de Barras
+### 2.5 Escaneo de Código de Barras y Góndola
 
-- **Método principal:** Cámara del celular (usando `mobile_scanner`)
-- **Método alternativo:** Escáneres Bluetooth/USB externos (para comercios que los tengan)
-- **Tipos de códigos soportados:** EAN-13, UPC, Code 128, QR, DataMatrix
-- **Velocidad objetivo:** Lectura en menos de 1 segundo con buena iluminación
+- **Método principal:** Cámara del smartphone mediante `mobile_scanner`.
+- **Método alternativo:** Lectores ópticos externos USB/Bluetooth (emulación de teclado HID para PC/Tablet).
+- **Modo Escaneo Continuo de Góndola (Batch):** Permite mantener la cámara activa en ráfaga para registrar existencias y precios en anaqueles en cuestión de segundos.
+- **Formatos soportados:** EAN-13, UPC-A, Code 128, QR, DataMatrix.
+- **Rendimiento objetivo:** Reconocimiento y agregado al carrito en menos de 1 segundo.
 
 ---
 
@@ -87,319 +92,220 @@ Nexus es un **Sistema de Gestión Comercial Modular** diseñado específicamente
 
 ### 3.1 Principio Fundamental
 
-> **El Sistema NO es una Pasarela de Pagos para las ventas del comercio.**
+> **El Sistema NO es una Pasarela de Pagos para las ventas del comercio minorista.**
 
 ### 3.2 Dos Flujos Financieros Completamente Separados
 
+```mermaid
+graph TD
+    subgraph Flujo_A [Flujo A: Suscripciones SaaS Nexus]
+        T1[Comercio / Tenant] -->|SPEI / OXXO Pay / Tarjeta / Efectivo MXN| N1[Fundadores Nexus: Alan y Eduardo]
+        N1 -->|Validación Webhook o Manual| S1[Activación del Plan SaaS]
+    end
+
+    subgraph Flujo_B [Flujo B: Ventas de Mostrador del Comercio]
+        C1[Cliente Final] -->|Efectivo MXN / SPEI / CoDi / TPV Clip| T2[Cajero del Comercio]
+        T2 -->|Confirmación Manual en UI| N2[Registro Contable Nexus: Kardex y Arqueo]
+    end
+```
+
 #### A) Cobro de Suscripciones SaaS (Nexus → Tenant)
-- **Propósito:** Los fundadores cobran la mensualidad a los comercios por usar Nexus
-- **Métodos:** Binance Pay (USDT), PayPal, Pago Móvil, Zinli, Efectivo en divisas
-- **Validación:** Automática (Binance Pay) o manual (resto)
-- **Idempotencia:** La tabla `binance_payments_processed` garantiza que no se acredite dos veces el mismo pago de suscripción
+- **Propósito:** Los fundadores cobran la cuota mensual a los comercios por el uso de la plataforma.
+- **Canales de cobro en México:**
+  - **SPEI (STP / Transferencia Interbancaria con CLABE dedicada):** Conciliación automática 24/7.
+  - **OXXO Pay:** Pago en efectivo en más de 20,000 sucursales OXXO mediante código de barras / referencia de 14 dígitos.
+  - **Mercado Pago / Stripe:** Cobro con tarjetas de débito/crédito mexicanas.
+  - **Efectivo MXN:** Cobro presencial manual durante visitas de activación inicial.
+- **Idempotencia:** Tablas de control para asegurar que ningún webhook procese dos veces la misma acreditación.
 
 #### B) Registro de Ventas del Comercio (Tenant → Cliente Final)
-- **Propósito:** El comercio cobra a sus clientes por productos/servicios
-- **Métodos:** Efectivo USD/VES, Pago Móvil, Zelle, Tarjetas, etc.
-- **Validación:** **NINGUNA automática.** El cajero confirma manualmente que recibió el dinero
-- **Rol del Sistema:** Actúa exclusivamente como **registro contable** para arqueo y reportes internos
-
-### 3.3 Implicaciones Técnicas
-
-| Concepto | Interpretación Correcta |
-|----------|------------------------|
-| **Binance Pay** | Cobra la mensualidad del SaaS a los comercios, NO las ventas |
-| **Pago Móvil en ventas** | El cajero anota el número de referencia manualmente |
-| **Venta "Pagada"** | El cajero confirma que recibió el dinero (input manual) |
-| **sale_payments** | Tabla de registro contable, sin validación de webhooks |
-| **Arqueo de caja** | Compara "lo que el sistema dice" vs "lo que hay físicamente" |
+- **Propósito:** El comerciante cobra a sus clientes por mercancía y abarrotes.
+- **Métodos en punto de venta:** Efectivo MXN, Transferencia SPEI, CoDi / Dimo (Banxico), Terminales TPV (Clip, Mercado Pago Point, Zettle).
+- **Validación:** **Manual por el cajero.** El cajero verifica físicamente el efectivo o el comprobante bancario del cliente.
+- **Rol del Sistema:** Registro contable estricto para control de caja, arqueos y reportes de rentabilidad.
 
 ---
 
 ## ARTÍCULO IV: RESTRICCIONES PRESUPUESTARIAS (BOOTSTRAP)
 
-### 4.1 Límites Financieros
+### 4.1 Límites Financieros Iniciales
 
-- **Presupuesto máximo de hosting:** $30/mes hasta alcanzar 3 clientes de pago
-- **Prioridad:** Servicios gratuitos o de bajo costo sobre soluciones empresariales
-- **Backups:** Manuales mediante scripts propios hasta tener ingresos suficientes
-- **Soporte:** Manejado directamente por los fundadores (Alan y Eduardo)
-- **Equipo:** 2 desarrolladores (Alan y Eduardo)
+- **Presupuesto máximo de hosting:** ~$10 a $30 USD/mes (~$200 a $600 MXN/mes) en Fase 1.
+- **Prioridad:** Soluciones open-source, tiers gratuitos confiables y VPS de costo predecible.
+- **Backups:** Automatización con scripts propios y almacenamiento en la nube sin costo inicial.
+- **Soporte:** Atendido directamente por los fundadores (Alan y Eduardo) para retroalimentación directa de producto.
 
-### 4.2 Estrategia de Crecimiento
-La evolución de la infraestructura y el crecimiento proyectado del sistema se rigen por la disponibilidad financiera y se detallan en la especificación técnica (ver [Sección 8.2 del Documento Maestro](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#82-plan-de-escalamiento-por-fases)).
+### 4.2 Decisiones de Arquitectura Limitadas por Presupuesto
 
-### 4.3 Decisiones de Arquitectura Limitadas por Presupuesto
-
-- ❌ **NO usar servicios de IA/LLM de pago** (GPT-4, Claude, etc.) hasta tener ingresos suficientes
-- ❌ **NO usar servicios de hosting caros** (AWS, Google Cloud) hasta Fase 3
-- ❌ **NO implementar backups automáticos costosos** hasta Fase 2
-- ❌ **NO construir servidores propios** hasta Fase 3
-- ✅ **USAR VPS económicos** (Contabo, Hetzner, ~$10/mes) o servicios gratuitos (Oracle Cloud Free Tier)
-- ✅ **USAR almacenamiento gratuito** (Backblaze B2 10GB, Cloudflare R2 10GB)
-- ✅ **OPTIMIZAR código** para correr en hardware limitado (2-4GB RAM)
-- ✅ **PRIORIZAR soluciones open-source** sobre servicios de pago
-
-### 4.4 Infraestructura Objetivo Inicial
-La selección de proveedores de hosting de bajo costo y la configuración inicial de los servicios de infraestructura se detallan en la especificación técnica (ver [Sección 8.1 del Documento Maestro](file:///d:/aland/Documents/Proyectos/Nexus/Documento%20Maestro%20Nexus%20v3-0.md#81-presupuesto-mensual-inicial)).
+- ❌ **NO contratar servicios de IA/LLM de pago** (OpenAI, Claude) en los flujos transaccionales del MVP.
+- ❌ **NO contratar APIs cloud de visión/OCR de pago por petición** (AWS Textract, Google Cloud Vision); se utilizan motores On-Device locales (`google_mlkit_text_recognition`).
+- ❌ **NO contratar infraestructura hyperscaler de alto costo** (AWS, Google Cloud) hasta alcanzar la Fase 3.
+- ❌ **NO implementar servidores físicos dedicados** en fases tempranas.
+- ✅ **USAR VPS económicos** (Contabo, Hetzner, ~$10 USD/mes).
+- ✅ **USAR almacenamiento de objetos gratuito** (Cloudflare R2, Backblaze B2).
+- ✅ **OPTIMIZAR código y base de datos** para correr eficientemente con recursos moderados (2-4GB RAM).
 
 ---
 
-## ARTÍCULO V: MÉTODOS DE COBRO DE SUSCRIPCIONES
+## ARTÍCULO V: MÉTODOS DE COBRO DE SUSCRIPCIONES SAAS
 
-### 5.1 Realidad del Mercado Informal
+### 5.1 Realidad del Mercado Retail Mexicano
 
-- La mayoría de los comercios informales NO tienen Binance Pay
-- El cobro de suscripciones será mayoritariamente MANUAL
-- Deben existir mecanismos eficientes para validar pagos manuales
+- La adopción de transferencias SPEI vía banca móvil y pagos en efectivo vía OXXO Pay cubren más del 90% del mercado comercial en México.
+- El sistema debe soportar tanto validación automática por webhooks como confirmación manual asistida por los fundadores.
 
-### 5.2 Métodos de Cobro Aceptados
+### 5.2 Matriz de Medios de Pago SaaS Aceptados
 
 | Método | Automatización | Proceso de Validación |
 |--------|----------------|----------------------|
-| **Binance Pay** | ✅ Automática | Webhook valida y activa suscripción |
-| **PayPal** | ⚠️ Semi-automática | Fundadores validan manualmente en dashboard de PayPal |
-| **Pago Móvil** | ❌ Manual | Tenant envía captura → Fundadores verifican en banco → Activan |
-| **Zinli** | ❌ Manual | Tenant envía captura → Fundadores verifican → Activan |
-| **Efectivo divisas** | ❌ Manual | Fundadores visitan local → Reciben efectivo → Activan |
+| **SPEI (STP / CLABE)** | ✅ Automática | Webhook concilia el pago al instante y activa la cuenta |
+| **OXXO Pay** | ✅ Automática | Webhook notifica el pago en tienda y renueva la suscripción |
+| **Mercado Pago / Tarjeta** | ✅ Automática | Cargo recurrente / único con confirmación en tiempo real |
+| **SPEI Manual (Captura)** | ⚠️ Manual | El tenant sube comprobante → Fundadores validan en banco → Activan |
+| **Efectivo MXN** | ❌ Manual | Fundadores reciben efectivo en campo → Activan en panel admin |
 
-### 5.3 Panel de Administración Interno
+### 5.3 Panel de Administración Interno (Para Fundadores)
 
-- El sistema debe tener un panel exclusivo para los fundadores
-- Lista de pagos pendientes de validación
-- Interfaz para aprobar/rechazar pagos manuales
-- Notificaciones automáticas al tenant cuando se aprueba su pago
-- Historial completo de validaciones
+- Panel exclusivo para Alan y Eduardo para monitorear el estado del SaaS.
+- Bandeja de pagos pendientes de conciliación manual.
+- Interfaz para aprobar, extender periodos de prueba o reactivar comercios.
+- Dashboard de métricas financieras clave: MRR en Pesos Mexicanos ($ MXN), churn y nuevos registros.
 
 ---
 
 ## ARTÍCULO VI: MODELO COMERCIAL (SAAS)
 
-### 6.1 Estructura de Planes
+### 6.1 Estructura de Planes en Pesos Mexicanos (MXN)
 
-| Plan | Precio | Módulos Incluidos | Límite Usuarios | Características Destacadas |
-|------|--------|-------------------|-----------------|----------------------------|
-| **Emprendedor** | $10/mes | Inventario, Ventas, Compras | Hasta 2 | Tasa Bimoneda, 1 Almacén, Alertas de Stock, Reportes Básicos |
-| **Comercio** | $20/mes | Base + Caja y Tesorería | Hasta 5 | Multi-almacén, Arqueo Multimoneda, Catálogo WhatsApp con Pedidos, Pagos Mixtos |
-| **Corporativo** | $35/mes | Todos los Módulos | Hasta 15 | Analítica Avanzada, KPIs Predictivos, Reportes Comparativos |
+| Plan | Tarifa Mensual | Módulos Incluidos | Límite Usuarios | Características Destacadas |
+|------|----------------|-------------------|-----------------|----------------------------|
+| **Emprendedor** | **$199 MXN / mes** | Inventario, Ventas, Compras base | Hasta 2 | 1 Almacén, Alertas de stock bajo, Notas de venta en ticket/PDF, Reportes básicos |
+| **Comercio** | **$399 MXN / mes** | Todo el plan Emprendedor + Caja y Tesorería | Hasta 5 | Multi-almacén, Arqueo con cono Banxico, Catálogo WhatsApp con pedidos, Pagos mixtos |
+| **Corporativo** | **$699 MXN / mes** | Todos los módulos del sistema | Hasta 15 | Analítica avanzada, KPIs de rentabilidad comparativa, permisos multi-sucursal |
 
-### 6.2 Punto de Equilibrio
+### 6.2 Punto de Equilibrio Financiero
 
-- Con **3 clientes en plan Emprendedor** = $30/mes (cubren hosting exacto)
-- Con **2 clientes en plan Comercio** = $40/mes (ya tienen margen)
-- Con **1 cliente en plan Corporativo** = $35/mes (cubren hosting + ganancia)
+- **Con 3 clientes en Plan Emprendedor:** ~$600 MXN / mes cubren la infraestructura básica del VPS.
+- **Con 2 clientes en Plan Comercio:** ~$800 MXN / mes generan balance positivo inicial.
+- **Con 5 clientes combinados:** Se alcanza sustentabilidad operativa total del proyecto en Fase 1.
 
-### 6.3 Ciclo de Vida de Suscripción
+### 6.3 Ciclo de Vida y Máquina de Estados de Suscripción
 
-**Máquina de Estados:**
-1. **ACTIVE:** Uso normal de todos los módulos contratados
-2. **SOFT_LOCK (Días 1-10 de morosidad):** Permite consultar inventario y ver reportes, pero **bloquea la creación de nuevas ventas y compras**
-3. **HARD_LOCK (Día 11+):** Bloqueo total. Solo permite ver pantalla de pago y contacto a soporte
-
-**Validación en Middleware:**
-- Cada request valida el estado de la suscripción del tenant
-- El acceso a módulos (Caja, Analítica) se inyecta dinámicamente según el `PlanID`
-- Si un usuario intenta acceder a una sección no pagada, la API retorna `403 Forbidden` con mensaje de Upsell
+1. **ACTIVE:** Acceso completo a las funcionalidades según el plan contratado.
+2. **SOFT_LOCK (Días 1-10 de morosidad):** Modo de solo lectura; permite consultar inventario y reportes históricos, pero **bloquea la creación de nuevas ventas y compras**.
+3. **HARD_LOCK (Día 11+ de morosidad):** Bloqueo total de la interfaz. Muestra únicamente la pantalla de reactivación y canales de pago.
 
 ---
 
 ## ARTÍCULO VII: REGLAS DE NEGOCIO SAGRADAS
 
-### 7.1 Inventario y Stock
+### 7.1 Inventario y Control de Stock
 
-- **Multi-almacén Unificado:** La tabla `warehouses` existe siempre. El Plan Emprendedor tiene un almacén "Principal" por defecto
-- **Stock Reservado con TTL:** El stock en estado "En Espera" (PENDING_PAYMENT) tiene un Tiempo de Vida de **15 minutos**. Un Cron Job debe liberarlo automáticamente si no se cobra
-- **Movimientos de Inventario:** Toda entrada/salida debe registrarse en `inventory_movements` con referencia al documento origen (venta, compra, traslado)
-- **Alertas de Stock:** Reglas simples basadas en umbrales (ej: "si stock < 5, alertar"), sin machine learning
+- **Multi-almacén Estructurado:** La entidad `warehouses` existe siempre en el modelo. Los planes base incluyen un "Almacén Principal" por defecto.
+- **Stock Reservado con TTL (Time-To-Live):** El stock de una venta en estado `PENDING_PAYMENT` se reserva por un máximo de **15 minutos**. Un Cron Job libera automáticamente los artículos si la transacción no se finaliza.
+- **Kardex Obligatorio:** Todo movimiento físico de stock (entrada, salida, ajuste, merma, traslado) debe persistirse en `inventory_movements` con motivo y referencia documental.
 
-### 7.2 Ventas y Pagos
+### 7.2 Ventas, Caja y Denominaciones de Banxico
 
-- **Máquina de Estados:** Las ventas deben pasar estrictamente por: `DRAFT` → `PENDING_PAYMENT` → `PAID` → `COMPLETED` / `CANCELLED` / `REFUNDED`
-- **Idempotencia de Webhooks:** La tabla `binance_payments_processed` debe tener `binance_transaction_id` como UNIQUE. Si Binance envía el webhook duplicado, la segunda inserción debe fallar
-- **Pagos Mixtos:** Una venta puede dividirse en múltiples métodos de pago y monedas. El sistema calcula el vuelto matemáticamente
-- **Registro Contable:** El cajero registra manualmente los métodos de pago recibidos. **NO hay validación automática de fondos**
+- **Máquina de Estados de Venta:** Transición estricta: `DRAFT` $\rightarrow$ `PENDING_PAYMENT` $\rightarrow$ `PAID` $\rightarrow$ `COMPLETED` / `CANCELLED` / `REFUNDED`.
+- **Arqueo de Caja con Cono Monetario Oficial de Banxico:**
+  - **Billetes:** $1,000, $500, $200, $100, $50, $20 MXN.
+  - **Monedas:** $20, $10, $5, $2, $1, $0.50 MXN.
+  - La tabla `cash_session_denominations` almacena el conteo físico exacto de cada denominación para auditoría de descuadres.
+- **Calculadora de Vuelto en Efectivo:** Interfaz de punto de venta optimizada con atajos para billetes comunes mexicanos ($50, $100, $200, $500 MXN) y cálculo instantáneo del cambio.
 
-### 7.3 Registro de Productos al Vuelo
+### 7.3 Registro Minimalista de 3 Campos y Lazy Loading en Punto de Venta
 
-- **Objetivo:** El cajero debe poder crear un producto nuevo en **menos de 10 segundos** sin interrumpir la venta
-- **Estrategias sin IA:**
-  - Búsqueda fuzzy (algoritmo de Levenshtein) para autocompletado
-  - Formulario ultra-optimizado (máximo 3 campos obligatorios)
-  - Atajos de teclado para PC/Tablet
-  - Modo "Creación Rápida" que no bloquea la transacción
-  - Plantillas de productos predefinidas
+- **Objetivo:** Permitir al cajero registrar un artículo no catalogado en **menos de 5 segundos** sin detener la venta.
+- **Formulario Minimalista de 3 Campos Vitales:** Únicamente **Nombre**, **Precio de Venta ($ MXN)** y **Cantidad/Stock inicial**.
+- **Metadatos Secundarios Automatizados:** El sistema autogenera el SKU (`NEX-XXXXX`), asigna la categoría por defecto ("General") y permite completar detalles adicionales de forma diferida.
+- **Inventario Orgánico Just-in-Time:** Si se escanea un producto no existente durante el checkout, se cobra y se guarda silenciosamente en la base de datos maestra para ventas futuras.
 
 ### 7.4 Catálogo Digital WhatsApp
 
-- **Formato:** Página web pública con catálogo sincronizado
-- **Funcionalidad:** Permite a los clientes hacer pedidos directamente por WhatsApp
-- **Sincronización:** Si el comerciante cambia un precio o agrega un producto, el catálogo se actualiza automáticamente
-- **SEO:** Renderizado del lado del servidor (SSR) para previews rápidos en WhatsApp
+- **Formato:** Página web pública responsiva (`nexus.com/tienda/nombre-comercio`).
+- **Funcionalidad:** Los clientes arman su carrito y el sistema genera un pedido estructurado para enviar al WhatsApp del comercio.
+- **Precios:** Sincronizados en tiempo real en Pesos Mexicanos ($ MXN).
 
-### 7.5 Seguridad y Roles
+### 7.5 Motor Híbrido de Catálogo Semilla y Red Comunitaria (Two-Tier Engine)
 
-- **Autenticación:** JWT (Access Token 15 min + Refresh Token 7 días)
-- **RBAC Granular:** Matriz de permisos (no roles rígidos). Ejemplo: `inventario.editar_precios`, `ventas.ver_costos`
-- **Roles Predefinidos:** `TENANT_OWNER`, `MANAGER`, `CASHIER`, `SALESPERSON` son solo paquetes de permisos
-- **Auditoría:** Toda acción crítica debe registrarse en `audit_logs` con `old_values` y `new_values`
+- **Tier 1 (Catálogo Semilla Maestro EAN-13 Oficial):** Base de datos precargada y offline con los ~1,000 a 2,000 productos líderes de abarrotes en México (GS1 EAN-13). Al escanear el código, autocompleta nombre y categoría en < 1 ms.
+- **Tier 2 (Red Comunitaria Crowdsourced con Consenso Automático):** 
+  - Cuando un producto no existe en Tier 1, el comercio ingresa su nombre y se envía un registro descriptivo anónimo a la tabla global de sugerencias.
+  - **Regla de Consenso:** Requiere que al menos **3 comercios independientes distintos** registren el mismo EAN con similitud > 80% (`pg_trgm`) para promoverse automáticamente a sugerencia verificada de la red.
+  - **Aislamiento y Privacidad Sagrada:** **NUNCA** se comparten costos, precios, existencias ni la identidad de los comercios. Cero moderación manual requerida por los fundadores.
 
----
+### 7.6 Gamificación del Onboarding y Setup Asistido
 
-## ARTÍCULO VIII: CONVENCIONES DE CÓDIGO
+- Barra de progreso visual con hitos claros (ej. *"¡Has registrado tus primeros 50 artículos!"*).
+- Recompensas tangibles automáticas por completar la configuración inicial en la primera semana (ej. 1 mes gratis adicional de suscripción o desbloqueo temporal de módulos premium).
 
-### 8.1 Nomenclatura
+### 7.7 OCR On-Device y Dictado de Voz Nativo
 
-- **Tablas:** Snake case, plural (ej: `products`, `sale_items`)
-- **Columnas:** Snake case (ej: `tenant_id`, `created_at`)
-- **Enums:** Upper snake case (ej: `PENDING_PAYMENT`, `ACTIVE`)
-- **API Endpoints:** Kebab case (ej: `/api/v1/purchase-orders`)
-- **Variables (Python/Dart):** Snake case
-- **Clases:** PascalCase
+- **OCR On-Device:** Extracción de datos de facturas físicas mediante **Google ML Kit Text Recognition** directamente en el procesador del smartphone (offline, costo $0 de servidor).
+- **Dictado de Voz Nativo:** Uso del motor local de reconocimiento de voz del sistema operativo (Android Speech / Web Speech API) para dictar productos y cantidades sin consumir APIs externas de pago.
 
-### 8.2 Estructura de Respuestas API
+### 7.8 Escaneo Continuo y Clonación entre Sucursales
 
-**Éxito:**
-```json
-{
-  "data": { ... },
-  "meta": {
-    "page": 1,
-    "total": 50,
-    "per_page": 20
-  }
-}
-```
-
-**Error:**
-```json
-{
-  "error": {
-    "code": "INSUFFICIENT_STOCK",
-    "message": "No hay suficiente stock de Harina PAN",
-    "details": {
-      "product_id": "uuid",
-      "requested": 5,
-      "available": 2
-    }
-  }
-}
-```
-
-### 8.3 Manejo de Errores
-- **Códigos HTTP Estándar:** 200 (OK), 201 (Created), 400 (Bad Request), 401 (Unauthorized), 403 (Forbidden), 404 (Not Found), 409 (Conflict), 422 (Unprocessable Entity), 500 (Internal Server Error)
-- **Errores de Negocio:** Usar códigos personalizados (ej: INSUFFICIENT_STOCK, TENANT_SUSPENDED, DUPLICATE_BARCODE)
-- **Logs:** Todo error 500 debe loguearse con stack trace completo y contexto del tenant
-
-### 8.4 Migraciones de Base de Datos
-- **Herramienta:** Alembic (para SQLAlchemy)
-- **Regla:** Nunca modificar una migración ya aplicada. Crear una nueva migración para revertir o ajustar
-- **Naming:** YYYYMMDD_HHMMSS_descripcion_corta.py (ej: 20260703_143025_add_exchange_rate_to_sales.py)
-
-### 8.5 Lo que el Sistema NO Debe Hacer (Nunca)
-- No implementar sincronización bidireccional offline compleja (WatermelonDB, Isar para escritura)
-- No hardcodear roles de usuario en el código. Usar siempre la matriz de permisos
-- No permitir ventas sin congelar la tasa de cambio en el registro
-- No almacenar contraseñas en texto plano. Siempre usar hashing seguro (bcrypt, argon2)
-- No exponer IDs internos en URLs o respuestas. Usar UUIDs públicos
-- No implementar facturación fiscal SENIAT (solo comprobantes administrativos)
-- No procesar ni validar pagos de ventas del comercio (solo registrar contablemente)
-- No integrar Binance Pay para cobro de ventas (solo para suscripciones SaaS)
-- No implementar una base de datos semilla global de productos (por el mantenimiento inviable que requiere para el equipo de fundadores)
-
-### 8.6 Lo que el Sistema NO Debe Hacer (Hasta tener ingresos suficientes)
-- No usar APIs de LLM/IA (GPT-4, Claude, etc.)
-- No construir servidores propios
-- No implementar backups automáticos costosos
-- No usar servicios de hosting caros (AWS, Google Cloud)
-
-### 8.7 Decisiones Diferidas (Versión 2.0 o 3.0)
-⏳ Integración con impresoras térmicas Bluetooth/USB (para tickets y etiquetas)
-⏳ Integración con Zinli/PayPal para cobro de suscripciones
-⏳ Facturación fiscal electrónica (SENIAT)
-⏳ Multi-idioma (i18n) - solo español por ahora
-⏳ App de escritorio nativa (Electron) - Flutter Web es suficiente
-⏳ Alertas predictivas con ML - solo reglas simples por ahora
-⏳ Dashboard analítico avanzado - solo gráficos básicos en MVP
+- **Modo Escaneo de Góndola:** Modo ráfaga continuo que detecta códigos de barras sucesivamente, pidiendo únicamente cantidad y precio en teclado numérico gigante.
+- **Clonación de Catálogo:** Mecanismo en 1 clic para duplicar la estructura del catálogo maestro hacia nuevas sucursales o comercios aliados (con stock en 0).
 
 ---
 
-## ARTÍCULO IX: ÉTICA, PRIVACIDAD Y SOPORTE
+## ARTÍCULO VIII: CONVENCIONES DE CÓDIGO Y PROHIBICIONES
 
-### 9.1 Privacidad del Usuario
-- **Datos Personales:** Cumplir con leyes venezolanas de protección de datos
-- **Encriptación:** Datos sensibles (contraseñas, tokens) deben estar encriptados en reposo
-- **Logs:** Nunca loguear datos sensibles (contraseñas, tokens completos, números de tarjeta)
+### 8.1 Nomenclatura Estándar
 
-### 9.2 Transparencia Comercial
-- **Precios Claros:** Los planes de suscripción deben mostrar claramente qué incluye cada uno
-- **Morosidad:** El sistema debe notificar al tenant antes de aplicar Soft Lock o Hard Lock
-- **Exportación de Datos:** El tenant debe poder exportar todos sus datos en cualquier momento
+- **Tablas:** Snake_case, plural (ej: `products`, `sale_items`, `cash_session_denominations`, `community_verified_catalog`).
+- **Columnas:** Snake_case (ej: `tenant_id`, `price_mxn`, `created_at`).
+- **Enums:** UPPER_SNAKE_CASE (ej: `CASH_MXN`, `SPEI`, `ACTIVE`).
+- **Endpoints API:** Kebab-case (ej: `/api/v1/cash/close-session`).
+- **Modelos/Clases:** PascalCase.
 
-### 9.3 Soporte al Cliente
-- **Inicial:** Manejado directamente por los fundadores (Alan y Eduardo)
-- **Objetivo:** Tener contacto directo con los clientes para entender sus problemas reales
-- **Evolución:** Cuando haya suficientes clientes, contratar personal de soporte dedicado
+### 8.2 Lo que el Sistema NO Debe Hacer (Prohibiciones Inquebrantables)
 
----
+- ❌ **No implementar timbrado fiscal digital CFDI 4.0 / SAT ni integración con PACs en esta fase:** El sistema emite notas de venta y recibos de control administrativo interno.
+- ❌ **No usar APIs cloud de visión/OCR o LLMs de pago por petición:** Se utiliza procesamiento On-Device local (`google_mlkit_text_recognition`) con costo $0 de infraestructura.
+- ❌ **No validar automáticamente fondos en ventas de mostrador:** El sistema actúa como registro contable; no procesa pagos de clientes en tienda.
+- ❌ **No mezclar pasarelas SaaS con cobros de mostrador:** OXXO Pay y SPEI automatizado son para cobrar la suscripción de Nexus, no para las ventas de la tiendita.
+- ❌ **No exigir catálogos manuales ni moderación humana a los fundadores:** La base comunitaria opera exclusivamente por consenso algorítmico autónomo de 3 comercios.
+- ❌ **No implementar sincronización bidireccional offline compleja:** Se mantiene arquitectura online con caché local de solo lectura.
+- ❌ **No almacenar contraseñas en texto plano:** Usar siempre hashing seguro con `bcrypt` o `argon2`.
+- ❌ **No exponer IDs internos secuenciales:** Utilizar siempre UUIDs públicos en APIs y URLs.
 
-## ARTÍCULO X: PROCESO DE DESARROLLO, CALIDAD Y DESPLIEGUE
+### 8.3 Decisiones Diferidas a Fases Posteriores
 
-### 10.1 Spec-Driven Development (SDD)
-- **Regla:** Antes de programar, debe existir una especificación (DBML, OpenAPI, diagrama de estados)
-- **Revisión:** Toda spec debe ser revisada por ambos fundadores antes de implementarse
-- **Documentación:** El código debe documentarse con docstrings claros. Las APIs deben tener OpenAPI actualizado
-
-### 10.2 Testing
-- **Unit Tests:** Obligatorios para lógica de negocio crítica (cálculos de comisiones, validación de stock)
-- **Integration Tests:** Obligatorios para endpoints de API
-- **E2E Tests:** Recomendados para flujos críticos (checkout, arqueo de caja)
-- **Cobertura Mínima:** 80% en módulos core (inventario, ventas)
-
-### 10.3 Despliegue
-- **Ambientes:** Development, Staging, Production
-- **CI/CD:** GitHub Actions o similar
-- **Base de Datos:** Migraciones automáticas en despliegue, pero con rollback manual disponible
-- **Backups:** Diarios manuales de PostgreSQL (script propio + upload a almacenamiento gratuito)
+- ⏳ Integración con timbrado fiscal digital CFDI 4.0 ante el SAT y PACs autorizados (Fase 3+).
+- ⏳ Integración directa con SDK de terminales de cobro (Clip / Mercado Pago Point).
+- ⏳ Impresión térmica ESC/POS vía Bluetooth/USB directa desde Flutter Web/Mobile.
+- ⏳ Modelos de IA/Machine Learning para pronóstico de demanda.
 
 ---
 
-## ARTÍCULO XI: EVOLUCIÓN Y ENMIENDAS
+## ANEXO A: GLOSARIO DE TÉRMINOS (MÉXICO)
 
-### 11.1 Proceso de Cambio
-- **Propuesta:** Cualquier cambio a esta constitución debe proponerse vía Pull Request o discusión documentada
-- **Discusión:** Debe haber discusión documentada (comentarios en PR o issue)
-- **Aprobación:** Requiere aprobación de ambos fundadores (Alan y Eduardo)
-- **Documentación:** Toda enmienda debe actualizar la versión y fecha de este documento
+- **Tenant:** Comercio minorista registrado en el SaaS (tiendita de abarrotes, miscelánea, etc.).
+- **MXN:** Peso Mexicano, moneda de curso legal y base de cálculo del sistema.
+- **Banxico:** Banco de México, banco central emisor de la moneda y regulador financiero.
+- **SPEI:** Sistema de Pagos Electrónicos Interbancarios de Banxico para transferencias inmediatas.
+- **CoDi / Dimo:** Plataformas de cobro digital inmediato de Banxico vía código QR o número telefónico.
+- **OXXO Pay:** Solución de pago de comercio electrónico para abonar en tiendas de conveniencia OXXO.
+- **EAN-13:** Estándar internacional de código de barras de 13 dígitos administrado por GS1 México.
+- **Nota de Venta:** Comprobante comercial interno no timbrado ante el SAT, estándar en microcomercios y RESICO.
+- **Arqueo de Caja:** Verificación y cuadre físico de dinero en efectivo versus ventas registradas en el sistema.
+- **Lazy Loading POS:** Registro dinámico y automático de productos no catalogados durante el flujo de venta.
 
-### 11.2 Principio de Retrocompatibilidad
-- **API:** No romper endpoints existentes sin versión (/api/v1/ → /api/v2/)
-- **Base de Datos:** No eliminar columnas sin migración de datos previa
-- **Frontend:** No cambiar flujos críticos sin período de transición
-
-## ANEXO A: GLOSARIO DE TÉRMINOS
-- **Tenant:** Comercio/empresa que usa el sistema
-- **Warehouse:** Almacén físico donde se guarda mercancía
-- **RLS:** Row-Level Security (seguridad a nivel de fila en PostgreSQL)
-- **TTL:** Time To Live (tiempo de vida de un estado temporal)
-- **Idempotencia:** Garantía de que una operación puede ejecutarse múltiples veces sin efectos secundarios
-- **Bimoneda:** Manejo nativo de dos monedas (USD y VES)
-- **Soft Lock:** Estado de suscripción que bloquea operaciones críticas pero permite consulta
-- **Hard Lock:** Estado de suscripción que bloquea todo acceso excepto pago
-- **SaaS:** Software as a Service (modelo de suscripción)
-- **Bootstrap:** Crecimiento con recursos limitados, reinvirtiendo ganancias
-- **MVP:** Minimum Viable Product (Producto Mínimo Viable)
+---
 
 ## ANEXO B: CHECKLIST PARA NUEVAS FUNCIONALIDADES
-- **Antes de implementar cualquier nueva funcionalidad, verificar:**
-  - ¿Respeta los principios del Artículo I?
-  - ¿Es compatible con la arquitectura multi-tenant (Artículo II)?
-  - ¿Maneja correctamente el contexto bimoneda?
-  - ¿Tiene una especificación clara (DBML, OpenAPI, diagrama)?
-  - ¿Se han considerado los casos de error y edge cases?
-  - ¿Se han definido los tests necesarios?
-  - ¿Se ha actualizado la documentación?
-  - ¿Respeta las restricciones del Artículo IX?
-  - ¿Respeta la separación de responsabilidades financieras (Artículo III)?
-  - ¿Está dentro del presupuesto actual (Artículo IV)?
-  - ¿Es mobile-first (Artículo I, principio 5)?
-  - ¿Aporta rapidez y eficiencia al usuario (Artículo I, principio 8)?
 
+Antes de codificar cualquier nueva funcionalidad, verificar:
+- [ ] ¿Respeta los principios rectores del Artículo I (incluyendo Cero Fricción en Setup)?
+- [ ] ¿Está modelada en Pesos Mexicanos (MXN) como moneda nativa base?
+- [ ] ¿Cumple con el aislamiento multi-tenant RLS en PostgreSQL?
+- [ ] ¿Evita dependencias o integraciones con el SAT / CFDI 4.0 en esta fase?
+- [ ] ¿Es compatible con el cono monetario oficial de Banxico si involucra caja?
+- [ ] ¿Utiliza procesamiento On-Device sin costo de APIs cloud de visión/IA?
+- [ ] ¿Respeta el modelo de 3 campos vitales y autocompletado con catálogo EAN?
+- [ ] ¿Está diseñada bajo el enfoque Mobile-First para smartphone Android?
+- [ ] ¿Aporta rapidez y ahorra tiempo al comerciante?
